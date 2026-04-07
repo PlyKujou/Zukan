@@ -19,6 +19,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    try {
     let email = identifier.trim();
 
     // If it's a username (no @), resolve it to an email via RPC
@@ -34,21 +35,39 @@ export default function LoginPage() {
       email = data as string;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setError(error.message);
+      if (error.message.toLowerCase().includes("invalid login credentials")) {
+        setError("Incorrect email/username or password.");
+      } else if (error.message.toLowerCase().includes("email not confirmed")) {
+        setError("Please confirm your email before logging in.");
+      } else {
+        setError(error.message);
+      }
+      setLoading(false);
+    } else if (!data.session) {
+      setError("Login failed — please try again.");
       setLoading(false);
     } else {
+      router.refresh();
       router.push("/dashboard");
+    }
+    } catch {
+      setError("Could not reach the server. Please try again.");
+      setLoading(false);
     }
   }
 
   async function signInWithGoogle() {
     setGoogleLoading(true);
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+    if (error) {
+      setError("Google sign-in failed. Please try again.");
+      setGoogleLoading(false);
+    }
   }
 
   return (

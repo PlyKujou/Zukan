@@ -20,26 +20,39 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { username } },
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { username } },
+      });
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      } else if (!data.session) {
+        setError("Check your email to confirm your account before logging in.");
+        setLoading(false);
+      } else {
+        router.refresh();
+        router.push("/dashboard");
+      }
+    } catch {
+      setError("Could not reach the server. Please try again.");
       setLoading(false);
-    } else {
-      router.push("/dashboard");
     }
   }
 
   async function signInWithGoogle() {
     setGoogleLoading(true);
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
+    if (error) {
+      setError("Google sign-in failed. Please try again.");
+      setGoogleLoading(false);
+    }
   }
 
   return (
