@@ -1,6 +1,11 @@
+export const dynamic = "force-dynamic";
+
 import { getAnime } from "@/lib/jikan";
 import Image from "next/image";
 import { AddToListButton } from "@/components/AddToListButton";
+import { ReviewSection } from "@/components/ReviewSection";
+import { CommentSection } from "@/components/CommentSection";
+import { createClient } from "@/lib/supabase/server";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -8,8 +13,20 @@ interface Props {
 
 export default async function AnimePage({ params }: Props) {
   const { id } = await params;
-  const { data: anime } = await getAnime(parseInt(id, 10));
+  const supabase = await createClient();
+
+  const [{ data: anime }, { data: reviews }] = await Promise.all([
+    getAnime(parseInt(id, 10)),
+    supabase
+      .from("reviews")
+      .select("rating")
+      .eq("mal_id", parseInt(id, 10)),
+  ]);
+
   const title = anime.title_english || anime.title;
+  const zukanRating = reviews && reviews.length > 0
+    ? (reviews.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / reviews.length).toFixed(1)
+    : null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
@@ -46,6 +63,9 @@ export default async function AnimePage({ params }: Props) {
                 ★ {anime.score}
               </span>
             )}
+            <span className="px-2 py-1 rounded font-semibold" style={{ backgroundColor: "var(--accent)", color: "#fff" }}>
+              ★ {zukanRating ?? "—"} Zukan
+            </span>
             {anime.episodes && (
               <span className="px-2 py-1 rounded" style={{ backgroundColor: "var(--surface-2)" }}>
                 {anime.episodes} episodes
@@ -80,6 +100,9 @@ export default async function AnimePage({ params }: Props) {
           )}
         </div>
       </div>
+
+      <ReviewSection malId={anime.mal_id} animeTitle={title} />
+      <CommentSection malId={anime.mal_id} />
     </div>
   );
 }

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -59,11 +61,15 @@ export default async function DashboardPage() {
     <div className="max-w-6xl mx-auto px-4 py-10">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">My List</h1>
+      <div className="flex items-center justify-between mb-8 relative">
+        <div
+          className="absolute -top-8 -left-4 w-64 h-32 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)", filter: "blur(32px)" }}
+        />
+        <h1 className="text-2xl font-bold relative">My List</h1>
         <Link
           href="/search"
-          className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+          className="relative px-4 py-2 rounded-lg text-sm font-semibold text-white"
           style={{ backgroundColor: "var(--accent)" }}
         >
           + Add Anime
@@ -87,7 +93,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Tabs + grid */}
-      <DashboardTabs grouped={grouped} />
+      <DashboardTabs grouped={grouped} userId={user.id} />
 
     </div>
   );

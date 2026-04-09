@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type ListStatus = "watching" | "completed" | "plan_to_watch" | "on_hold" | "dropped";
@@ -22,6 +23,7 @@ interface Props {
 
 export function AddToListButton({ malId, title, imageUrl, episodes }: Props) {
   const supabase = createClient();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [current, setCurrent] = useState<{ status: ListStatus; rating: number | null; progress: number } | null>(null);
   const [rating, setRating] = useState<number | null>(null);
@@ -69,6 +71,7 @@ export function AddToListButton({ malId, title, imageUrl, episodes }: Props) {
     setCurrent({ status, rating, progress });
     setSaving(false);
     setOpen(false);
+    router.refresh();
   }
 
   async function remove() {
@@ -80,6 +83,7 @@ export function AddToListButton({ malId, title, imageUrl, episodes }: Props) {
     setProgress(0);
     setSaving(false);
     setOpen(false);
+    router.refresh();
   }
 
   return (

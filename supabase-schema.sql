@@ -66,6 +66,51 @@ create policy "entries_insert" on list_entries for insert with check (auth.uid()
 create policy "entries_update" on list_entries for update using (auth.uid() = user_id);
 create policy "entries_delete" on list_entries for delete using (auth.uid() = user_id);
 
+-- Recommendations ("if you liked X, watch Y")
+create table if not exists public.recommendations (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  source_mal_id integer not null,
+  source_title text not null,
+  source_image_url text default '',
+  target_mal_id integer not null,
+  target_title text not null,
+  target_image_url text default '',
+  body text not null check (char_length(body) >= 10),
+  created_at timestamptz default now(),
+  unique(user_id, source_mal_id, target_mal_id)
+);
+
+alter table recommendations enable row level security;
+create policy "recs_select" on recommendations for select using (true);
+create policy "recs_insert" on recommendations for insert with check (auth.uid() = user_id);
+create policy "recs_delete" on recommendations for delete using (auth.uid() = user_id);
+
+-- Genre preferences on profile
+alter table profiles add column if not exists favorite_genres text[] default '{}';
+
+-- Reviews
+create table if not exists public.reviews (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  mal_id integer not null,
+  anime_title text not null,
+  rating integer not null check (rating >= 1 and rating <= 10),
+  body text not null check (char_length(body) >= 10),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique(user_id, mal_id)
+);
+
+alter table reviews enable row level security;
+create policy "reviews_select" on reviews for select using (true);
+create policy "reviews_insert" on reviews for insert with check (auth.uid() = user_id);
+create policy "reviews_update" on reviews for update using (auth.uid() = user_id);
+create policy "reviews_delete" on reviews for delete using (auth.uid() = user_id);
+
+create trigger reviews_updated_at before update on reviews
+  for each row execute procedure update_updated_at();
+
 -- Resolve username -> email for login
 create or replace function get_email_by_username(p_username text)
 returns text language plpgsql security definer as $$
