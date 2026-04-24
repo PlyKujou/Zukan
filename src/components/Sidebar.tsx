@@ -245,6 +245,17 @@ function SidebarContent({
           </div>
         ) : (
           <div className="space-y-1.5">
+            <div
+              className="rounded-xl p-3 mb-2"
+              style={{ backgroundColor: "var(--accent-dim)", border: "1px solid var(--accent-dim-border)" }}
+            >
+              <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--accent)" }}>
+                Join Zukan free
+              </p>
+              <p className="text-xs leading-snug" style={{ color: "var(--text-muted)" }}>
+                Track your lists, rate anime, and discover what to watch next.
+              </p>
+            </div>
             <Link
               href="/login"
               onClick={onClose}

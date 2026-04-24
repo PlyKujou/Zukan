@@ -9,11 +9,42 @@ import type { JikanAnime } from "@/lib/jikan";
 
 const SWIPE_THRESHOLD = 90;
 const BASE = "https://api.jikan.moe/v4";
+const DISMISSED_KEY = "zukan_dismissed";
+// Probability a dismissed anime sneaks back into a batch
+const DISMISSED_RESHOW_CHANCE = 0.07;
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function loadDismissed(): Set<number> {
+  try {
+    const raw = localStorage.getItem(DISMISSED_KEY);
+    return raw ? new Set(JSON.parse(raw) as number[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveDismissed(ids: Set<number>) {
+  try {
+    // Keep at most 500 entries so localStorage doesn't grow forever
+    const arr = [...ids].slice(-500);
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
+// Picks ONE random genre from the list so results are OR-style across fetches
 async function fetchBatch(genreIds: number[], page: number): Promise<JikanAnime[]> {
   try {
+    const genreId = genreIds[Math.floor(Math.random() * genreIds.length)];
     const res = await fetch(
-      `${BASE}/anime?genres=${genreIds.slice(0, 3).join(",")}&order_by=score&sort=desc&limit=24&sfw&min_score=6.5&page=${page}`,
+      `${BASE}/anime?genres=${genreId}&order_by=score&sort=desc&limit=24&sfw&min_score=6.5&page=${page}`,
       { cache: "no-store" }
     );
     if (!res.ok) return [];
@@ -21,6 +52,8 @@ async function fetchBatch(genreIds: number[], page: number): Promise<JikanAnime[
     return json.data ?? [];
   } catch { return []; }
 }
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function DiscoverPage() {
   const supabase = createClient();
@@ -30,11 +63,14 @@ export default function DiscoverPage() {
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [listIds, setListIds] = useState<Set<number>>(new Set());
   const [seenIds, setSeenIds] = useState<Set<number>>(new Set());
-  const [page, setPage] = useState(2);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [added, setAdded] = useState(false); // flash on add
+  const [added, setAdded] = useState(false);
 
-  // Drag state — use refs for values that change during pointermove to avoid rerenders
+  // Dismissed persisted to localStorage — use ref so swipe callbacks always see latest value
+  const dismissedRef = useRef<Set<number>>(new Set());
+
+  // Drag state
   const [offset, setOffset] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const dragging = useRef(false);
@@ -48,6 +84,8 @@ export default function DiscoverPage() {
     if (!user) { setLoading(false); return; }
     setUserId(user.id);
 
+    dismissedRef.current = loadDismissed();
+
     const [{ data: entries }, { data: profile }] = await Promise.all([
       supabase.from("list_entries").select("mal_id").eq("user_id", user.id),
       supabase.from("profiles").select("favorite_genres").eq("id", user.id).maybeSingle(),
@@ -58,23 +96,41 @@ export default function DiscoverPage() {
 
     const genres: string[] = profile?.favorite_genres ?? [];
     const gIds = genres.map((g) => GENRE_ID_MAP[g]).filter(Boolean) as number[];
-    const finalIds = gIds.length > 0 ? gIds : [1, 22, 4]; // Action, Romance, Comedy fallback
+    const finalIds = gIds.length > 0 ? gIds : [1, 22, 4];
     setGenreIds(finalIds);
 
-    const batch = await fetchBatch(finalIds, 1);
-    const filtered = batch.filter((a) => !existingIds.has(a.mal_id));
+    // Randomize starting page so refresh never shows the same order
+    const startPage = Math.floor(Math.random() * 4) + 1;
+    setPage(startPage + 1);
+
+    const raw = await fetchBatch(finalIds, startPage);
+    const filtered = filterBatch(raw, existingIds, new Set(), dismissedRef.current);
     setQueue(filtered);
     setLoading(false);
   }
 
+  function filterBatch(
+    batch: JikanAnime[],
+    listSet: Set<number>,
+    seenSet: Set<number>,
+    dismissed: Set<number>
+  ): JikanAnime[] {
+    return shuffle(batch).filter((a) => {
+      if (listSet.has(a.mal_id) || seenSet.has(a.mal_id)) return false;
+      if (dismissed.has(a.mal_id)) return Math.random() < DISMISSED_RESHOW_CHANCE;
+      return true;
+    });
+  }
+
   async function loadMore(gIds: number[], pg: number, listSet: Set<number>, seenSet: Set<number>) {
-    const batch = await fetchBatch(gIds, pg);
-    const filtered = batch.filter((a) => !listSet.has(a.mal_id) && !seenSet.has(a.mal_id));
+    const raw = await fetchBatch(gIds, pg);
+    const filtered = filterBatch(raw, listSet, seenSet, dismissedRef.current);
     setQueue((prev) => [...prev, ...filtered]);
     setPage(pg + 1);
   }
 
-  // ── Pointer handlers ──
+  // ── Pointer handlers ────────────────────────────────────────────────────────
+
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (animating.current) return;
     dragging.current = true;
@@ -91,10 +147,9 @@ export default function DiscoverPage() {
   function onPointerUp() {
     if (!dragging.current) return;
     dragging.current = false;
-    const dx = offset;
-    if (dx > SWIPE_THRESHOLD) {
+    if (offset > SWIPE_THRESHOLD) {
       triggerSwipe("right");
-    } else if (dx < -SWIPE_THRESHOLD) {
+    } else if (offset < -SWIPE_THRESHOLD) {
       triggerSwipe("left");
     } else {
       setTransitioning(true);
@@ -107,25 +162,29 @@ export default function DiscoverPage() {
     animating.current = true;
     const current = queue[0];
 
-    // Start fly-out animation immediately
     setTransitioning(true);
     setOffset(dir === "right" ? 600 : -600);
 
-    // Advance the queue exactly when the animation ends — don't wait for network
     const newSeen = new Set([...seenIds, current.mal_id]);
+
+    // Persist dismissals so they rarely come back
+    if (dir === "left") {
+      const newDismissed = new Set([...dismissedRef.current, current.mal_id]);
+      dismissedRef.current = newDismissed;
+      saveDismissed(newDismissed);
+    }
+
     setTimeout(() => {
       setSeenIds(newSeen);
       setQueue((q) => q.slice(1));
       setOffset(0);
       setTransitioning(false);
       animating.current = false;
-      // Load more outside the state updater, using known queue length
       if (queue.length - 1 < 5) {
         loadMore(genreIds, page, listIds, newSeen);
       }
     }, 320);
 
-    // Write to Supabase in the background — doesn't block the UI
     if (dir === "right" && userId) {
       setAdded(true);
       setTimeout(() => setAdded(false), 1200);
@@ -146,7 +205,6 @@ export default function DiscoverPage() {
   const current = queue[0];
   const next = queue[1];
   const third = queue[2];
-
   const rotation = offset * 0.04;
   const absOffset = Math.abs(offset);
   const showAdd = offset > 40;
@@ -199,21 +257,15 @@ export default function DiscoverPage() {
         {/* Card stack */}
         <div className="relative h-[520px]">
 
-          {/* Third card (bottom) */}
           {third && (
             <div
               className="absolute inset-0 rounded-2xl overflow-hidden"
-              style={{
-                transform: "scale(0.92) translateY(16px)",
-                zIndex: 1,
-                opacity: 0.6,
-              }}
+              style={{ transform: "scale(0.92) translateY(16px)", zIndex: 1, opacity: 0.6 }}
             >
               <CardContent anime={third} />
             </div>
           )}
 
-          {/* Second card */}
           {next && (
             <div
               className="absolute inset-0 rounded-2xl overflow-hidden"
@@ -227,7 +279,6 @@ export default function DiscoverPage() {
             </div>
           )}
 
-          {/* Top card (draggable) */}
           {current && (
             <div
               className="absolute inset-0 rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing"
@@ -244,7 +295,6 @@ export default function DiscoverPage() {
             >
               <CardContent anime={current} />
 
-              {/* ADD overlay */}
               <div
                 className="absolute inset-0 flex items-start justify-start p-6 rounded-2xl transition-opacity"
                 style={{
@@ -253,15 +303,11 @@ export default function DiscoverPage() {
                   pointerEvents: "none",
                 }}
               >
-                <span
-                  className="text-2xl font-black border-4 px-3 py-1 rounded-lg rotate-[-12deg]"
-                  style={{ color: "#22c55e", borderColor: "#22c55e" }}
-                >
+                <span className="text-2xl font-black border-4 px-3 py-1 rounded-lg rotate-[-12deg]" style={{ color: "#22c55e", borderColor: "#22c55e" }}>
                   ADD
                 </span>
               </div>
 
-              {/* SKIP overlay */}
               <div
                 className="absolute inset-0 flex items-start justify-end p-6 rounded-2xl transition-opacity"
                 style={{
@@ -270,10 +316,7 @@ export default function DiscoverPage() {
                   pointerEvents: "none",
                 }}
               >
-                <span
-                  className="text-2xl font-black border-4 px-3 py-1 rounded-lg rotate-[12deg]"
-                  style={{ color: "#ef4444", borderColor: "#ef4444" }}
-                >
+                <span className="text-2xl font-black border-4 px-3 py-1 rounded-lg rotate-[12deg]" style={{ color: "#ef4444", borderColor: "#ef4444" }}>
                   SKIP
                 </span>
               </div>
@@ -281,14 +324,12 @@ export default function DiscoverPage() {
           )}
         </div>
 
-        {/* Added flash */}
         {added && (
           <div className="text-center mt-3 text-sm font-semibold" style={{ color: "#22c55e" }}>
             Added to Plan to Watch ✓
           </div>
         )}
 
-        {/* Buttons */}
         <div className="flex items-center justify-center gap-6 mt-6">
           <button
             onClick={() => triggerSwipe("left")}
@@ -330,7 +371,6 @@ function CardContent({ anime }: { anime: JikanAnime }) {
         sizes="400px"
         draggable={false}
       />
-      {/* Bottom gradient info */}
       <div
         className="absolute inset-0"
         style={{ background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 75%)" }}
@@ -342,12 +382,8 @@ function CardContent({ anime }: { anime: JikanAnime }) {
               ★ {anime.score}
             </span>
           )}
-          {anime.year && (
-            <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.year}</span>
-          )}
-          {anime.episodes && (
-            <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.episodes} eps</span>
-          )}
+          {anime.year && <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.year}</span>}
+          {anime.episodes && <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.episodes} eps</span>}
         </div>
         <h2 className="text-lg font-bold text-white leading-tight mb-2">{title}</h2>
         <div className="flex flex-wrap gap-1 mb-3">

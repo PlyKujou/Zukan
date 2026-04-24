@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { GENRES } from "@/lib/genres";
 import { ImportPanel } from "@/components/ImportPanel";
+import { ExportPanel } from "@/components/ExportPanel";
 
-type Tab = "profile" | "preferences" | "import";
+type Tab = "profile" | "preferences" | "import" | "export";
 
 interface Profile {
   username: string;
@@ -85,6 +86,7 @@ export default function EditProfilePage() {
     { key: "profile", label: "Profile" },
     { key: "preferences", label: "Preferences" },
     { key: "import", label: "Import" },
+    { key: "export", label: "Export" },
   ];
 
   return (
@@ -246,6 +248,16 @@ export default function EditProfilePage() {
               {message}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Export tab */}
+      {tab === "export" && userId && (
+        <div>
+          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
+            Download your Zukan list in a format compatible with MyAnimeList or AniList.
+          </p>
+          <ExportPanel userId={userId} username={profile.username} />
         </div>
       )}
     </div>
