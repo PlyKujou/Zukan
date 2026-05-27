@@ -62,6 +62,13 @@ const FEATURES = [
   { icon: "⟳", title: "Always Current",   desc: "Powered by MyAnimeList — thousands of shows, always fresh." },
 ];
 
+const PROOF_ITEMS = [
+  { label: "Anime in database", value: "30,000+" },
+  { label: "Free forever", value: "Always" },
+  { label: "No ads ever", value: "Zero" },
+  { label: "Your data", value: "Yours" },
+];
+
 // ── LOGGED-IN HOME ──────────────────────────────────────────────────────────
 
 async function PersonalisedHome({ userId }: { userId: string }) {
@@ -330,93 +337,200 @@ async function LandingPage() {
   const allMalIds = [...airing, ...topRated].map((a) => a.mal_id);
   const zukanRatings = await getZukanRatings(allMalIds);
 
+  const mosaicAnime = [...airing, ...topRated].slice(0, 24);
+
   return (
     <div style={{ backgroundColor: "var(--bg)" }}>
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 flex flex-wrap gap-0 opacity-15 pointer-events-none select-none">
-          {[...airing, ...topRated].slice(0, 24).map((a) => (
+
+      {/* ── HERO ── */}
+      <section className="relative overflow-hidden" style={{ minHeight: "92vh", display: "flex", alignItems: "center" }}>
+        {/* Mosaic background */}
+        <div className="absolute inset-0 flex flex-wrap gap-0 pointer-events-none select-none" style={{ opacity: 0.12 }}>
+          {mosaicAnime.map((a) => (
             <div key={a.mal_id} className="relative" style={{ width: "8.33%", height: "100%" }}>
               <Image src={a.images.jpg.large_image_url || a.images.jpg.image_url} alt="" fill className="object-cover" sizes="8vw" />
             </div>
           ))}
         </div>
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,8,15,0.88) 0%, rgba(8,8,15,0.65) 40%, rgba(8,8,15,1) 100%)" }} />
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,8,15,0.92) 0%, rgba(8,8,15,0.7) 35%, rgba(8,8,15,0.95) 85%, rgba(8,8,15,1) 100%)" }} />
         {/* Grid overlay */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: "linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
+          backgroundImage: "linear-gradient(rgba(99,102,241,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.07) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
         }} />
-        {/* Central glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] pointer-events-none" style={{
-          background: "radial-gradient(ellipse, rgba(99,102,241,0.18) 0%, transparent 65%)",
-          filter: "blur(40px)",
+        {/* Radial glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{
+          width: 800, height: 400,
+          background: "radial-gradient(ellipse, rgba(99,102,241,0.22) 0%, transparent 65%)",
+          filter: "blur(60px)",
         }} />
-        <div className="relative max-w-6xl mx-auto px-4 pt-28 pb-24 text-center">
-          <div className="inline-block text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)", border: "1px solid var(--accent-dim-border)" }}>
+
+        <div className="relative w-full max-w-6xl mx-auto px-4 py-32 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full mb-8" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)", border: "1px solid var(--accent-dim-border)" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent)", display: "inline-block" }} />
             Free · No ads · Always open
           </div>
-          <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight mb-5 tracking-tight">
-            Your anime.<br /><span style={{ color: "var(--accent)" }}>Your list.</span>
+
+          {/* Headline */}
+          <h1 className="font-black leading-none mb-6 tracking-tight" style={{ fontSize: "clamp(3rem, 9vw, 6.5rem)" }}>
+            Your anime.<br />
+            <span style={{
+              color: "var(--accent)",
+              textShadow: "0 0 80px rgba(99,102,241,0.45)",
+            }}>Your list.</span>
           </h1>
-          <p className="text-base sm:text-lg max-w-xl mx-auto mb-10" style={{ color: "var(--text-muted)" }}>
-            Track every show you've watched, rate them, log your progress, and build a profile that's actually yours.
+
+          {/* Subheading */}
+          <p className="max-w-lg mx-auto mb-10 text-lg leading-relaxed" style={{ color: "var(--text-muted)" }}>
+            Track every show, rate it, log your progress — then share a profile that&apos;s actually yours.
           </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Link href="/signup" className="px-6 py-3 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: "var(--accent)" }}>
-              Get started free
+
+          {/* CTAs */}
+          <div className="flex items-center justify-center gap-3 flex-wrap mb-12">
+            <Link
+              href="/signup"
+              className="px-8 py-3.5 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 hover:scale-105"
+              style={{ backgroundColor: "var(--accent)", boxShadow: "0 0 32px rgba(99,102,241,0.35)" }}
+            >
+              Start tracking — it&apos;s free
             </Link>
-            <Link href="/search" className="px-6 py-3 rounded-xl text-sm font-semibold" style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)" }}>
-              Browse anime
+            <Link
+              href="/search"
+              className="px-8 py-3.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+              style={{ backgroundColor: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)" }}
+            >
+              Browse anime →
             </Link>
+          </div>
+
+          {/* Proof chips */}
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs" style={{ color: "var(--text-muted)" }}>
+            {["No credit card", "5 list types", "Episode tracking", "Public profiles"].map((chip) => (
+              <span key={chip} className="flex items-center gap-1.5">
+                <span style={{ color: "var(--success)" }}>✓</span> {chip}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Accent divider under hero */}
-      <div style={{ height: 1, background: "linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.4) 30%, rgba(99,102,241,0.4) 70%, transparent 100%)" }} />
+      {/* ── PROOF STRIP ── */}
+      <div style={{ borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", backgroundColor: "var(--surface)" }}>
+        <div className="max-w-6xl mx-auto px-4 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          {PROOF_ITEMS.map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-lg font-extrabold tracking-tight" style={{ color: "var(--accent)" }}>{value}</p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* Features */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
+      {/* ── FEATURES ── */}
+      <section className="max-w-6xl mx-auto px-4 py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl sm:text-3xl font-extrabold mb-3 tracking-tight">Everything you need. Nothing you don&apos;t.</h2>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Simple by design, powerful when you need it.</p>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {FEATURES.map((f) => (
-            <div key={f.title} className="rounded-2xl p-6" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-              <div className="text-2xl mb-4 w-11 h-11 flex items-center justify-center rounded-xl" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}>
+            <div key={f.title} className="rounded-2xl p-6 flex flex-col gap-3 hover:border-opacity-60 transition-all" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="text-xl w-12 h-12 flex items-center justify-center rounded-2xl font-bold" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)", fontSize: 22 }}>
                 {f.icon}
               </div>
-              <h3 className="font-bold mb-1">{f.title}</h3>
+              <h3 className="font-bold text-sm">{f.title}</h3>
               <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Airing now */}
+      {/* ── MOCK UI PREVIEW ── */}
+      <section className="max-w-6xl mx-auto px-4 pb-16">
+        <div className="rounded-3xl overflow-hidden relative" style={{ border: "1px solid var(--border)", backgroundColor: "var(--surface)" }}>
+          {/* Glow top */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none" style={{ width: 500, height: 2, background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent)" }} />
+          <div className="p-8 sm:p-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full mb-4 inline-block" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}>Your dashboard</span>
+              <h2 className="text-2xl font-extrabold mb-3 tracking-tight">Track progress, not just titles.</h2>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--text-muted)" }}>
+                Every show you add gets its own progress bar, rating, and notes. Pause it, resume it, drop it — your list, your rules.
+              </p>
+              <Link href="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: "var(--accent)" }}>
+                Build your list
+              </Link>
+            </div>
+            {/* Stylized UI mock */}
+            <div className="space-y-3">
+              {[
+                { title: "Attack on Titan", eps: 87, total: 87, rating: 10, status: "Completed" },
+                { title: "Frieren: Beyond Journey's End", eps: 16, total: 28, rating: 9, status: "Watching" },
+                { title: "Solo Leveling", eps: 0, total: 12, rating: null, status: "Plan to Watch" },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                  <div className="w-9 h-12 rounded-lg shrink-0" style={{ backgroundColor: "var(--border)", background: `linear-gradient(135deg, var(--accent-dim), var(--border))` }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-xs font-semibold truncate">{item.title}</p>
+                      {item.rating && (
+                        <span className="text-xs font-bold shrink-0" style={{ color: "var(--accent)" }}>★ {item.rating}</span>
+                      )}
+                    </div>
+                    {item.status === "Watching" ? (
+                      <>
+                        <div className="h-1 rounded-full overflow-hidden mb-1" style={{ backgroundColor: "var(--border)" }}>
+                          <div className="h-full rounded-full" style={{ width: `${Math.round((item.eps / item.total) * 100)}%`, backgroundColor: "var(--accent)" }} />
+                        </div>
+                        <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.eps}/{item.total} eps</p>
+                      </>
+                    ) : (
+                      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{item.status} · {item.total} eps</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs text-center pt-1" style={{ color: "var(--text-muted)" }}>+ your entire backlog, ratings, and notes</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── AIRING NOW ── */}
       <section className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold">Airing This Season</h2>
-          <Link href="/search" className="text-sm hover:underline" style={{ color: "var(--accent)" }}>Browse all →</Link>
+          <div>
+            <h2 className="text-lg font-bold">Airing This Season</h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Add them to your list as they air</p>
+          </div>
+          <Link href="/search" className="text-sm font-medium hover:underline" style={{ color: "var(--accent)" }}>Browse all →</Link>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: "thin" }}>
           {airing.map((a) => <AnimeCardSmall key={a.mal_id} anime={a} zukanRating={zukanRatings[a.mal_id]} />)}
         </div>
       </section>
 
-      {/* Top rated */}
+      {/* ── TOP RATED ── */}
       <section className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold">Top Rated All Time</h2>
-          <Link href="/search" className="text-sm hover:underline" style={{ color: "var(--accent)" }}>Browse all →</Link>
+          <div>
+            <h2 className="text-lg font-bold">Top Rated All Time</h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>The best of the best</p>
+          </div>
+          <Link href="/search" className="text-sm font-medium hover:underline" style={{ color: "var(--accent)" }}>Browse all →</Link>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: "thin" }}>
           {topRated.map((a) => <AnimeCardSmall key={a.mal_id} anime={a} zukanRating={zukanRatings[a.mal_id]} />)}
         </div>
       </section>
 
-      {/* Recent reviews */}
+      {/* ── RECENT REVIEWS ── */}
       {recentReviews.length > 0 && (
         <section className="max-w-6xl mx-auto px-4 py-8">
-          <h2 className="text-lg font-bold mb-5">Recent Reviews</h2>
+          <h2 className="text-lg font-bold mb-1">Recent Reviews</h2>
+          <p className="text-xs mb-5" style={{ color: "var(--text-muted)" }}>What the community is saying</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recentReviews.map((review) => (
               <Link key={review.id} href={`/anime/${review.mal_id}`} className="rounded-2xl p-4 flex flex-col gap-2 hover:opacity-90 transition-opacity" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
@@ -435,17 +549,58 @@ async function LandingPage() {
         </section>
       )}
 
-      {/* CTA */}
+      {/* ── FINAL CTA ── */}
       <section className="max-w-6xl mx-auto px-4 py-16">
-        <div className="rounded-3xl p-10 sm:p-16 text-center relative overflow-hidden" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center top, var(--accent-dim) 0%, transparent 70%)" }} />
-          <h2 className="text-2xl sm:text-3xl font-extrabold mb-3 relative">Ready to start tracking?</h2>
-          <p className="text-sm mb-8 relative" style={{ color: "var(--text-muted)" }}>Join and build your list in seconds. It's completely free.</p>
-          <Link href="/signup" className="px-8 py-3 rounded-xl text-sm font-semibold text-white inline-block relative" style={{ backgroundColor: "var(--accent)" }}>
-            Create your free account
-          </Link>
+        <div className="rounded-3xl relative overflow-hidden" style={{ background: "linear-gradient(135deg, var(--surface) 0%, #0d0d22 100%)", border: "1px solid var(--border)" }}>
+          {/* Top glow line */}
+          <div className="absolute top-0 left-0 right-0 pointer-events-none" style={{ height: 1, background: "linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.6) 30%, rgba(99,102,241,0.6) 70%, transparent 100%)" }} />
+          {/* Background radial */}
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.15) 0%, transparent 60%)" }} />
+
+          <div className="relative px-8 sm:px-16 py-14 sm:py-20">
+            <div className="max-w-2xl mx-auto text-center">
+              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: "var(--accent)" }}>Get started in 30 seconds</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 tracking-tight">
+                Track your first anime<br />today. It&apos;s free.
+              </h2>
+              <p className="text-sm mb-8 leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                No credit card. No trial period. Just sign up and start building your list.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+                <Link
+                  href="/signup"
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl text-sm font-bold text-white text-center transition-all hover:opacity-90 hover:scale-105"
+                  style={{ backgroundColor: "var(--accent)", boxShadow: "0 0 40px rgba(99,102,241,0.3)" }}
+                >
+                  Create your free account →
+                </Link>
+                <Link
+                  href="/login"
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl text-sm font-semibold text-center transition-all hover:opacity-80"
+                  style={{ backgroundColor: "transparent", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+                >
+                  Already have an account
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-6 text-xs" style={{ color: "var(--text-muted)" }}>
+                {[
+                  { icon: "◎", text: "5 list types" },
+                  { icon: "★", text: "1–10 ratings" },
+                  { icon: "⬡", text: "Public profile" },
+                  { icon: "⟳", text: "30,000+ titles" },
+                ].map(({ icon, text }) => (
+                  <span key={text} className="flex items-center gap-1.5">
+                    <span style={{ color: "var(--accent)" }}>{icon}</span> {text}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
+
     </div>
   );
 }

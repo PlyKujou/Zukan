@@ -56,17 +56,30 @@ interface Props {
 }
 
 export default async function PublicProfilePage({ params }: Props) {
-  const { username } = await params;
+  const { username: rawUsername } = await params;
+  const username = decodeURIComponent(rawUsername);
   const supabase = await createClient();
 
   const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
+  let { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, username, display_name, bio, avatar_url, favorite_genres")
     .eq("username", username)
     .maybeSingle();
 
+  // Retry once for transient DB issues
+  if (!profile && !profileError) {
+    const retry = await supabase
+      .from("profiles")
+      .select("id, username, display_name, bio, avatar_url, favorite_genres")
+      .eq("username", username)
+      .maybeSingle();
+    profile = retry.data;
+    profileError = retry.error;
+  }
+
+  if (profileError) throw new Error(profileError.message);
   if (!profile) notFound();
 
   // favorite_anime is a newer column — fetch separately so a missing column doesn't 404 the page

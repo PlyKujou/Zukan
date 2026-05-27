@@ -28,18 +28,23 @@ export function FavoriteAnimeSlots({ favorites, isOwner, profileId }: Props) {
   });
   const [pickerOpen, setPickerOpen] = useState<number | null>(null);
   const [entries, setEntries] = useState<FavoriteAnime[]>([]);
+  const [entriesLoading, setEntriesLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (pickerOpen === null) return;
+    setEntriesLoading(true);
     supabase
       .from("list_entries")
       .select("mal_id, title, image_url")
       .eq("user_id", profileId)
       .in("status", ["watching", "completed"])
       .order("title", { ascending: true })
-      .then(({ data }) => setEntries((data as FavoriteAnime[]) ?? []));
+      .then(({ data }) => {
+        setEntries((data as FavoriteAnime[]) ?? []);
+        setEntriesLoading(false);
+      });
   }, [pickerOpen]);
 
   async function save(updated: (FavoriteAnime | null)[]) {
@@ -132,9 +137,36 @@ export function FavoriteAnimeSlots({ favorites, isOwner, profileId }: Props) {
               style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
             />
             <div className="overflow-y-auto flex-1 space-y-2 pr-1">
-              {filtered.length === 0 && (
-                <p className="text-sm text-center py-4" style={{ color: "var(--text-muted)" }}>No entries found.</p>
-              )}
+              {entriesLoading ? (
+                <p className="text-sm text-center py-4" style={{ color: "var(--text-muted)" }}>Loading…</p>
+              ) : entries.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-8 px-2 text-center">
+                  <span className="text-3xl">📭</span>
+                  <p className="text-sm font-medium">Nothing in your list yet</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                    Add anime to your watching or completed list first, then come back to set your favourites.
+                  </p>
+                  <div className="flex gap-2 mt-1">
+                    <Link
+                      href="/search"
+                      className="px-4 py-2 rounded-lg text-xs font-semibold text-white"
+                      style={{ backgroundColor: "var(--accent)" }}
+                      onClick={() => { setPickerOpen(null); setSearch(""); }}
+                    >
+                      Browse anime →
+                    </Link>
+                    <button
+                      onClick={() => { setPickerOpen(null); setSearch(""); }}
+                      className="px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer"
+                      style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+                    >
+                      Go back
+                    </button>
+                  </div>
+                </div>
+              ) : filtered.length === 0 ? (
+                <p className="text-sm text-center py-4" style={{ color: "var(--text-muted)" }}>No matches for &ldquo;{search}&rdquo;</p>
+              ) : null}
               {filtered.map((entry) => (
                 <button
                   key={entry.mal_id}

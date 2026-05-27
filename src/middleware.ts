@@ -23,7 +23,13 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
+  let session = null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    session = data.session;
+  } catch {
+    // Supabase unreachable — treat as unauthenticated
+  }
 
   const protectedPaths = ["/dashboard", "/profile/edit"];
   const isProtected = protectedPaths.some((p) => request.nextUrl.pathname.startsWith(p));
