@@ -26,11 +26,12 @@ interface Props {
   malId: number;
   userId: string;
   currentStatus: ListStatus;
+  episodes?: number | null;
   /** "dot" = small colored circle button (for card overlays), "badge" = pill with label (for list rows) */
   variant?: "dot" | "badge";
 }
 
-export function QuickStatusButton({ malId, userId, currentStatus: initial, variant = "badge" }: Props) {
+export function QuickStatusButton({ malId, userId, currentStatus: initial, episodes, variant = "badge" }: Props) {
   const supabase = createClient();
   const router = useRouter();
   const [status, setStatus] = useState<ListStatus>(initial);
@@ -49,7 +50,9 @@ export function QuickStatusButton({ malId, userId, currentStatus: initial, varia
 
   async function pick(s: ListStatus) {
     setSaving(true);
-    await supabase.from("list_entries").update({ status: s }).eq("user_id", userId).eq("mal_id", malId);
+    const update: Record<string, unknown> = { status: s };
+    if (s === "completed" && episodes) update.progress = episodes;
+    await supabase.from("list_entries").update(update).eq("user_id", userId).eq("mal_id", malId);
     setStatus(s);
     setSaving(false);
     setOpen(false);

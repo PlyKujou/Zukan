@@ -7,6 +7,7 @@ import Link from "next/link";
 import { FavoriteAnimeSlots } from "@/components/FavoriteAnimeSlots";
 import { FollowButton } from "@/components/FollowButton";
 import { QuickStatusButton } from "@/components/QuickStatusButton";
+import { IncrementEpisodeButton } from "@/components/IncrementEpisodeButton";
 
 type ListStatus = "watching" | "completed" | "plan_to_watch" | "on_hold" | "dropped";
 
@@ -373,8 +374,17 @@ export default async function PublicProfilePage({ params }: Props) {
                           )}
                         </Link>
                         {isOwner && (
-                          <div className="pr-3">
-                            <QuickStatusButton malId={entry.mal_id} userId={profile.id} currentStatus={entry.status} variant="dot" />
+                          <div className="pr-3 flex items-center gap-2">
+                            {entry.status === "watching" && (
+                              <IncrementEpisodeButton
+                                entryId={entry.id}
+                                malId={entry.mal_id}
+                                userId={profile.id}
+                                initialProgress={entry.progress}
+                                episodes={entry.episodes}
+                              />
+                            )}
+                            <QuickStatusButton malId={entry.mal_id} userId={profile.id} currentStatus={entry.status} episodes={entry.episodes} variant="dot" />
                           </div>
                         )}
                       </div>

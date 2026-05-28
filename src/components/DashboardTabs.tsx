@@ -171,19 +171,16 @@ export function DashboardTabs({ grouped, userId }: { grouped: Record<ListStatus,
                   </div>
                 </Link>
 
-                {/* Hover controls — outside Link so clicks don't navigate */}
-                <div className="absolute bottom-9 left-2 right-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <QuickStatusButton malId={entry.mal_id} userId={userId} currentStatus={entry.status} variant="dot" />
+                {/* Controls below card */}
+                <div className="mt-2 flex items-center justify-between gap-1">
+                  <div className={active === "completed" ? "opacity-0 group-hover:opacity-100 transition-opacity duration-150" : ""}>
+                    <QuickStatusButton malId={entry.mal_id} userId={userId} currentStatus={entry.status} episodes={entry.episodes} variant="dot" />
+                  </div>
                   {active === "watching" && (
                     <button
                       onClick={(e) => incrementEpisode(entry, e)}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95"
-                      style={{
-                        backgroundColor: "rgba(99,102,241,0.9)",
-                        color: "#fff",
-                        backdropFilter: "blur(4px)",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 hover:opacity-80"
+                      style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)", border: "1px solid var(--accent-dim-border)" }}
                     >
                       <Plus size={11} strokeWidth={3} />1 ep
                     </button>

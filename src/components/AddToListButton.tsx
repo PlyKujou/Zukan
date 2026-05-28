@@ -58,6 +58,7 @@ export function AddToListButton({ malId, title, imageUrl, episodes }: Props) {
       return;
     }
     setSaving(true);
+    const effectiveProgress = status === "completed" && episodes ? episodes : progress;
     await supabase.from("list_entries").upsert({
       user_id: userId,
       mal_id: malId,
@@ -66,9 +67,10 @@ export function AddToListButton({ malId, title, imageUrl, episodes }: Props) {
       episodes,
       status,
       rating,
-      progress,
+      progress: effectiveProgress,
     }, { onConflict: "user_id,mal_id" });
-    setCurrent({ status, rating, progress });
+    setProgress(effectiveProgress);
+    setCurrent({ status, rating, progress: effectiveProgress });
     setSaving(false);
     setOpen(false);
     router.refresh();
