@@ -15,14 +15,14 @@ export default async function StatsPage() {
   ]);
 
   const all = entries ?? [];
-  const total = all.length;
   const completed = all.filter((e) => e.status === "completed");
+  const total = completed.length;
   const watching = all.filter((e) => e.status === "watching");
   const planToWatch = all.filter((e) => e.status === "plan_to_watch");
   const onHold = all.filter((e) => e.status === "on_hold");
   const dropped = all.filter((e) => e.status === "dropped");
 
-  const totalEpisodes = all.reduce((s, e) => s + (e.progress ?? 0), 0);
+  const totalEpisodes = completed.reduce((s, e) => s + (e.episodes ?? e.progress ?? 0), 0);
   const hoursWatched = Math.round((totalEpisodes * 24) / 60);
 
   const rated = all.filter((e) => e.rating);

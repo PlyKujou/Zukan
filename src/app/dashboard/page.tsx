@@ -21,9 +21,9 @@ interface Entry {
 }
 
 const STATS = [
-  { key: "total",     label: "Total Anime" },
-  { key: "completed", label: "Completed" },
+  { key: "total",     label: "Completed" },
   { key: "watching",  label: "Watching" },
+  { key: "plan",      label: "Plan to Watch" },
   { key: "avg",       label: "Avg Rating" },
 ] as const;
 
@@ -51,10 +51,10 @@ export default async function DashboardPage() {
     : "—";
 
   const statValues: Record<typeof STATS[number]["key"], string | number> = {
-    total:     all.length,
-    completed: grouped.completed.length,
-    watching:  grouped.watching.length,
-    avg:       avgRating,
+    total:    grouped.completed.length,
+    watching: grouped.watching.length,
+    plan:     grouped.plan_to_watch.length,
+    avg:      avgRating,
   };
 
   return (
