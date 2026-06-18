@@ -2,10 +2,9 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { AnimeCard } from "@/components/AnimeCard";
-import { searchAnime, getSeasonNow, getTopAnime, getAnimeByGenre, getTopMovies } from "@/lib/jikan";
-import type { JikanAnime } from "@/lib/jikan";
+import { searchAnime, getSeasonNow, getTopAnime, getAnimeByGenre, getTopMovies } from "@/lib/anilist";
+import type { JikanAnime } from "@/lib/anilist";
 import { createClient } from "@/lib/supabase/server";
-import { GENRE_ID_MAP } from "@/lib/genres";
 import { getZukanRatings } from "@/lib/supabase/ratings";
 
 interface Props {
@@ -100,7 +99,7 @@ function Section({ title, items, ratings }: { title: string; items: JikanAnime[]
 async function fetchForYou(genres: string[]): Promise<{ title: string; items: JikanAnime[] }[]> {
   const picks = genres.slice(0, 4); // show up to 4 personalised sections
   const results = await Promise.allSettled(
-    picks.map((g) => getAnimeByGenre(GENRE_ID_MAP[g] ?? 1, 14))
+    picks.map((g) => getAnimeByGenre(g, 14))
   );
   return picks.map((g, i) => ({
     title: `Top ${g}`,
@@ -113,18 +112,18 @@ async function fetchDiscovery() {
     getSeasonNow(14),
     getTopAnime("favorite", 14),
     getTopAnime("bypopularity", 14),
-    getAnimeByGenre(22, 14),   // Romance
-    getAnimeByGenre(1, 14),    // Action
-    getAnimeByGenre(4, 14),    // Comedy
-    getAnimeByGenre(10, 14),   // Fantasy
-    getAnimeByGenre(24, 14),   // Sci-Fi
-    getAnimeByGenre(7, 14),    // Mystery
-    getAnimeByGenre(36, 14),   // Slice of Life
-    getAnimeByGenre(14, 14),   // Horror
-    getAnimeByGenre(37, 14),   // Supernatural
+    getAnimeByGenre("Romance", 14),
+    getAnimeByGenre("Action", 14),
+    getAnimeByGenre("Comedy", 14),
+    getAnimeByGenre("Fantasy", 14),
+    getAnimeByGenre("Sci-Fi", 14),
+    getAnimeByGenre("Mystery", 14),
+    getAnimeByGenre("Slice of Life", 14),
+    getAnimeByGenre("Horror", 14),
+    getAnimeByGenre("Supernatural", 14),
     getTopMovies(14),
-    getAnimeByGenre(27, 14),   // Shounen
-    getAnimeByGenre(42, 14),   // Seinen
+    getAnimeByGenre("Shounen", 14),
+    getAnimeByGenre("Seinen", 14),
   ]);
 
   return results.map((r) => (r.status === "fulfilled" ? r.value : []));

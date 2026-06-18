@@ -4,14 +4,26 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { GENRE_ID_MAP } from "@/lib/genres";
-import type { JikanAnime } from "@/lib/jikan";
+import type { Anime } from "@/lib/anilist";
 
 const SWIPE_THRESHOLD = 90;
-const BASE = "https://api.jikan.moe/v4";
 const DISMISSED_KEY = "zukan_dismissed";
-// Probability a dismissed anime sneaks back into a batch
 const DISMISSED_RESHOW_CHANCE = 0.07;
+
+// Demographics that AniList treats as tags rather than genres
+const TAG_GENRES = new Set(["Shounen", "Shoujo", "Seinen", "Josei", "Isekai"]);
+
+interface AnilistRaw {
+  idMal: number | null;
+  title: { romaji: string; english: string | null };
+  coverImage: { large: string; extraLarge: string };
+  description: string | null;
+  episodes: number | null;
+  averageScore: number | null;
+  genres: string[];
+  status: string;
+  startDate: { year: number | null };
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,23 +45,51 @@ function loadDismissed(): Set<number> {
 
 function saveDismissed(ids: Set<number>) {
   try {
-    // Keep at most 500 entries so localStorage doesn't grow forever
     const arr = [...ids].slice(-500);
     localStorage.setItem(DISMISSED_KEY, JSON.stringify(arr));
   } catch {}
 }
 
-// Picks ONE random genre from the list so results are OR-style across fetches
-async function fetchBatch(genreIds: number[], page: number): Promise<JikanAnime[]> {
+async function fetchBatch(genres: string[], page: number): Promise<Anime[]> {
   try {
-    const genreId = genreIds[Math.floor(Math.random() * genreIds.length)];
-    const res = await fetch(
-      `${BASE}/anime?genres=${genreId}&order_by=score&sort=desc&limit=24&sfw&min_score=6.5&page=${page}`,
-      { cache: "no-store" }
-    );
+    const genre = genres[Math.floor(Math.random() * genres.length)];
+    const filterKey = TAG_GENRES.has(genre) ? "tag" : "genre";
+    const res = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: `query ($page: Int) {
+          Page(page: $page, perPage: 24) {
+            media(type: ANIME, ${filterKey}: "${genre}", sort: SCORE_DESC, averageScore_greater: 65, status_not: NOT_YET_RELEASED) {
+              idMal title { romaji english } coverImage { large extraLarge }
+              description(asHtml: false) episodes averageScore genres status startDate { year }
+            }
+          }
+        }`,
+        variables: { page },
+      }),
+      cache: "no-store",
+    });
     if (!res.ok) return [];
     const json = await res.json();
-    return json.data ?? [];
+    if (json.errors) return [];
+    const media: AnilistRaw[] = json.data?.Page?.media ?? [];
+    return media
+      .filter((m) => m.idMal != null)
+      .map((m): Anime => ({
+        mal_id: m.idMal!,
+        title: m.title.romaji,
+        title_english: m.title.english,
+        images: { jpg: { image_url: m.coverImage.large, large_image_url: m.coverImage.extraLarge || m.coverImage.large } },
+        synopsis: m.description,
+        episodes: m.episodes,
+        score: m.averageScore != null ? m.averageScore / 10 : null,
+        genres: m.genres.map((name, i) => ({ mal_id: i + 1, name })),
+        status: m.status,
+        aired: { string: "", from: m.startDate?.year ? `${m.startDate.year}-01-01` : null },
+        year: m.startDate?.year ?? null,
+        broadcast: null,
+      }));
   } catch { return []; }
 }
 
@@ -58,9 +98,9 @@ async function fetchBatch(genreIds: number[], page: number): Promise<JikanAnime[
 export default function DiscoverPage() {
   const supabase = createClient();
 
-  const [queue, setQueue] = useState<JikanAnime[]>([]);
+  const [queue, setQueue] = useState<Anime[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
-  const [genreIds, setGenreIds] = useState<number[]>([]);
+  const [genres, setGenres] = useState<string[]>([]);
   const [listIds, setListIds] = useState<Set<number>>(new Set());
   const [seenIds, setSeenIds] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(1);
@@ -94,27 +134,25 @@ export default function DiscoverPage() {
     const existingIds = new Set<number>((entries ?? []).map((e: { mal_id: number }) => e.mal_id));
     setListIds(existingIds);
 
-    const genres: string[] = profile?.favorite_genres ?? [];
-    const gIds = genres.map((g) => GENRE_ID_MAP[g]).filter(Boolean) as number[];
-    const finalIds = gIds.length > 0 ? gIds : [1, 22, 4];
-    setGenreIds(finalIds);
+    const favoriteGenres: string[] = profile?.favorite_genres ?? [];
+    const finalGenres = favoriteGenres.length > 0 ? favoriteGenres : ["Action", "Romance", "Comedy"];
+    setGenres(finalGenres);
 
-    // Randomize starting page so refresh never shows the same order
     const startPage = Math.floor(Math.random() * 4) + 1;
     setPage(startPage + 1);
 
-    const raw = await fetchBatch(finalIds, startPage);
+    const raw = await fetchBatch(finalGenres, startPage);
     const filtered = filterBatch(raw, existingIds, new Set(), dismissedRef.current);
     setQueue(filtered);
     setLoading(false);
   }
 
   function filterBatch(
-    batch: JikanAnime[],
+    batch: Anime[],
     listSet: Set<number>,
     seenSet: Set<number>,
     dismissed: Set<number>
-  ): JikanAnime[] {
+  ): Anime[] {
     return shuffle(batch).filter((a) => {
       if (listSet.has(a.mal_id) || seenSet.has(a.mal_id)) return false;
       if (dismissed.has(a.mal_id)) return Math.random() < DISMISSED_RESHOW_CHANCE;
@@ -122,8 +160,8 @@ export default function DiscoverPage() {
     });
   }
 
-  async function loadMore(gIds: number[], pg: number, listSet: Set<number>, seenSet: Set<number>) {
-    const raw = await fetchBatch(gIds, pg);
+  async function loadMore(gs: string[], pg: number, listSet: Set<number>, seenSet: Set<number>) {
+    const raw = await fetchBatch(gs, pg);
     const filtered = filterBatch(raw, listSet, seenSet, dismissedRef.current);
     setQueue((prev) => [...prev, ...filtered]);
     setPage(pg + 1);
@@ -181,7 +219,7 @@ export default function DiscoverPage() {
       setTransitioning(false);
       animating.current = false;
       if (queue.length - 1 < 5) {
-        loadMore(genreIds, page, listIds, newSeen);
+        loadMore(genres, page, listIds, newSeen);
       }
     }, 320);
 
@@ -359,7 +397,7 @@ export default function DiscoverPage() {
   );
 }
 
-function CardContent({ anime }: { anime: JikanAnime }) {
+function CardContent({ anime }: { anime: Anime }) {
   const title = anime.title_english || anime.title;
   return (
     <div className="w-full h-full relative" style={{ backgroundColor: "var(--surface)" }}>

@@ -2,11 +2,10 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Image from "next/image";
-import { getTopAnime, getSeasonNow, getAnimeByGenre } from "@/lib/jikan";
-import type { JikanAnime } from "@/lib/jikan";
+import { getTopAnime, getSeasonNow, getAnimeByGenre } from "@/lib/anilist";
+import type { JikanAnime } from "@/lib/anilist";
 import { createClient } from "@/lib/supabase/server";
 import { getZukanRatings } from "@/lib/supabase/ratings";
-import { GENRE_ID_MAP } from "@/lib/genres";
 
 interface Review {
   id: string;
@@ -111,7 +110,7 @@ async function PersonalisedHome({ userId }: { userId: string }) {
   const genres: string[] = profile?.favorite_genres ?? [];
   const forYouGenre = genres[0];
   const forYouAnime = forYouGenre
-    ? await getAnimeByGenre(GENRE_ID_MAP[forYouGenre] ?? 1, 14).catch(() => [])
+    ? await getAnimeByGenre(forYouGenre, 14).catch(() => [])
     : [];
 
   const airing = await getSeasonNow(14).catch(() => []);

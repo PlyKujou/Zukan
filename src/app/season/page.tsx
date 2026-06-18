@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import { getSchedule, getSeason } from "@/lib/jikan";
-import type { JikanAnime } from "@/lib/jikan";
+import { getSchedule, getSeason } from "@/lib/anilist";
+import type { JikanAnime } from "@/lib/anilist";
 import { createClient } from "@/lib/supabase/server";
 import { getZukanRatings } from "@/lib/supabase/ratings";
 import Image from "next/image";

@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { getAnime } from "@/lib/jikan";
+import { getAnime } from "@/lib/anilist";
 import Image from "next/image";
 import { AddToListButton } from "@/components/AddToListButton";
 import { ReviewSection } from "@/components/ReviewSection";

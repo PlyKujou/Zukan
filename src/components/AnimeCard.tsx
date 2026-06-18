@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { JikanAnime } from "@/lib/jikan";
+import type { JikanAnime } from "@/lib/anilist";
 import { Plus, Check } from "lucide-react";
 
 type ListStatus = "watching" | "completed" | "plan_to_watch" | "on_hold" | "dropped";
