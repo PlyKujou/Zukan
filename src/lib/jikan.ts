@@ -15,22 +15,30 @@ export interface JikanAnime {
   broadcast: { day: string | null; time: string | null; timezone: string | null } | null;
 }
 
-export async function searchAnime(query: string, page = 1): Promise<{ data: JikanAnime[]; pagination: { last_visible_page: number } }> {
-  const res = await fetch(`${BASE}/anime?q=${encodeURIComponent(query)}&page=${page}&limit=20&sfw`, {
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) throw new Error("Jikan search failed");
-  return res.json();
+export async function searchAnime(query: string, page = 1): Promise<{ data: JikanAnime[]; pagination: { last_visible_page: number } } | null> {
+  try {
+    const res = await fetch(`${BASE}/anime?q=${encodeURIComponent(query)}&page=${page}&limit=20`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
-export async function getAnime(id: number): Promise<{ data: JikanAnime }> {
-  const res = await fetch(`${BASE}/anime/${id}`, { next: { revalidate: 86400 } });
-  if (!res.ok) throw new Error("Jikan fetch failed");
-  return res.json();
+export async function getAnime(id: number): Promise<{ data: JikanAnime } | null> {
+  try {
+    const res = await fetch(`${BASE}/anime/${id}`, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
 export async function getTopAnime(filter: "airing" | "bypopularity" | "favorite" = "bypopularity", limit = 12): Promise<JikanAnime[]> {
-  const res = await fetch(`${BASE}/top/anime?filter=${filter}&limit=${limit}&sfw`, {
+  const res = await fetch(`${BASE}/top/anime?filter=${filter}&limit=${limit}`, {
     next: { revalidate: 3600 },
   });
   if (!res.ok) return [];
@@ -39,7 +47,7 @@ export async function getTopAnime(filter: "airing" | "bypopularity" | "favorite"
 }
 
 export async function getSeasonNow(limit = 12): Promise<JikanAnime[]> {
-  const res = await fetch(`${BASE}/seasons/now?limit=${limit}&sfw`, {
+  const res = await fetch(`${BASE}/seasons/now?limit=${limit}`, {
     next: { revalidate: 3600 },
   });
   if (!res.ok) return [];
@@ -49,7 +57,7 @@ export async function getSeasonNow(limit = 12): Promise<JikanAnime[]> {
 
 export async function getAnimeByGenre(genreId: number, limit = 14): Promise<JikanAnime[]> {
   const res = await fetch(
-    `${BASE}/anime?genres=${genreId}&order_by=score&sort=desc&limit=${limit}&sfw&min_score=7`,
+    `${BASE}/anime?genres=${genreId}&order_by=score&sort=desc&limit=${limit}&min_score=7`,
     { next: { revalidate: 3600 } }
   );
   if (!res.ok) return [];
@@ -58,7 +66,7 @@ export async function getAnimeByGenre(genreId: number, limit = 14): Promise<Jika
 }
 
 export async function getTopMovies(limit = 14): Promise<JikanAnime[]> {
-  const res = await fetch(`${BASE}/top/anime?type=movie&limit=${limit}&sfw`, {
+  const res = await fetch(`${BASE}/top/anime?type=movie&limit=${limit}`, {
     next: { revalidate: 3600 },
   });
   if (!res.ok) return [];
@@ -67,7 +75,7 @@ export async function getTopMovies(limit = 14): Promise<JikanAnime[]> {
 }
 
 export async function getSeason(year: number, season: string): Promise<JikanAnime[]> {
-  const res = await fetch(`${BASE}/seasons/${year}/${season}?limit=25&sfw`, {
+  const res = await fetch(`${BASE}/seasons/${year}/${season}?limit=25`, {
     next: { revalidate: 3600 },
   });
   if (!res.ok) return [];
@@ -78,9 +86,9 @@ export async function getSeason(year: number, season: string): Promise<JikanAnim
 export async function getSchedule(): Promise<JikanAnime[]> {
   // Fetch currently airing anime with broadcast day info — up to 3 pages
   const pages = await Promise.allSettled([
-    fetch(`${BASE}/seasons/now?limit=25&sfw&page=1`, { next: { revalidate: 3600 } }).then((r) => r.json()),
-    fetch(`${BASE}/seasons/now?limit=25&sfw&page=2`, { next: { revalidate: 3600 } }).then((r) => r.json()),
-    fetch(`${BASE}/seasons/now?limit=25&sfw&page=3`, { next: { revalidate: 3600 } }).then((r) => r.json()),
+    fetch(`${BASE}/seasons/now?limit=25&page=1`, { next: { revalidate: 3600 } }).then((r) => r.json()),
+    fetch(`${BASE}/seasons/now?limit=25&page=2`, { next: { revalidate: 3600 } }).then((r) => r.json()),
+    fetch(`${BASE}/seasons/now?limit=25&page=3`, { next: { revalidate: 3600 } }).then((r) => r.json()),
   ]);
   const all: JikanAnime[] = [];
   for (const p of pages) {

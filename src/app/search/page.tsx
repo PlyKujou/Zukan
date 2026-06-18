@@ -69,8 +69,14 @@ const SECTIONS = [
 ] as const;
 
 function ScrollRow({ items, ratings }: { items: JikanAnime[]; ratings: Record<number, string> }) {
-  if (items.length === 0) return null;
   const unique = items.filter((a, i, arr) => arr.findIndex((x) => x.mal_id === a.mal_id) === i);
+  if (unique.length === 0) {
+    return (
+      <p className="text-xs py-1" style={{ color: "var(--text-muted)" }}>
+        Unavailable right now — try again in a moment.
+      </p>
+    );
+  }
   return (
     <div className="flex gap-3 overflow-x-auto pb-3" style={{ scrollbarWidth: "thin" }}>
       {unique.map((anime) => (
@@ -83,7 +89,6 @@ function ScrollRow({ items, ratings }: { items: JikanAnime[]; ratings: Record<nu
 }
 
 function Section({ title, items, ratings }: { title: string; items: JikanAnime[]; ratings: Record<number, string> }) {
-  if (items.length === 0) return null;
   return (
     <section className="mb-10">
       <h2 className="text-base font-bold mb-3">{title}</h2>
@@ -223,9 +228,7 @@ export default async function SearchPage({ searchParams }: Props) {
     hasQuery ? Promise.resolve(null) : fetchDiscovery(),
   ]);
 
-  const allMalIds = results
-    ? results.data.map((a) => a.mal_id)
-    : [...(discovery ?? []).flat(), ...forYou.flatMap((s) => s.items)].map((a) => a.mal_id);
+  const allMalIds = (results?.data ?? [...(discovery ?? []).flat(), ...forYou.flatMap((s) => s.items)]).map((a) => a.mal_id);
   const zukanRatings = await getZukanRatings(allMalIds);
 
   const lastPage = results?.pagination.last_visible_page ?? 1;
@@ -271,6 +274,9 @@ export default async function SearchPage({ searchParams }: Props) {
       </div>
 
       {/* Search results */}
+      {hasQuery && results === null && (
+        <p style={{ color: "var(--text-muted)" }}>Search is unavailable right now — the anime database may be rate-limiting requests. Try again in a moment.</p>
+      )}
       {hasQuery && results && results.data.length === 0 && (
         <p style={{ color: "var(--text-muted)" }}>No results for &quot;{q}&quot;.</p>
       )}

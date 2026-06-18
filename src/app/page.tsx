@@ -48,6 +48,13 @@ function AnimeCardSmall({ anime, zukanRating }: { anime: JikanAnime; zukanRating
 
 function ScrollRow({ items, ratings }: { items: JikanAnime[]; ratings: Record<number, string> }) {
   const unique = items.filter((a, i, arr) => arr.findIndex((x) => x.mal_id === a.mal_id) === i);
+  if (unique.length === 0) {
+    return (
+      <p className="text-sm py-2" style={{ color: "var(--text-muted)" }}>
+        Couldn&apos;t load right now — the anime database may be temporarily unavailable. Try refreshing in a bit.
+      </p>
+    );
+  }
   return (
     <div className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: "thin" }}>
       {unique.map((a) => <AnimeCardSmall key={a.mal_id} anime={a} zukanRating={ratings[a.mal_id]} />)}

@@ -6,6 +6,7 @@ import { AddToListButton } from "@/components/AddToListButton";
 import { ReviewSection } from "@/components/ReviewSection";
 import { CommentSection } from "@/components/CommentSection";
 import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -15,7 +16,7 @@ export default async function AnimePage({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: anime }, { data: reviews }] = await Promise.all([
+  const [animeResult, { data: reviews }] = await Promise.all([
     getAnime(parseInt(id, 10)),
     supabase
       .from("reviews")
@@ -23,6 +24,8 @@ export default async function AnimePage({ params }: Props) {
       .eq("mal_id", parseInt(id, 10)),
   ]);
 
+  if (!animeResult) notFound();
+  const anime = animeResult.data;
   const title = anime.title_english || anime.title;
   const zukanRating = reviews && reviews.length > 0
     ? (reviews.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / reviews.length).toFixed(1)
