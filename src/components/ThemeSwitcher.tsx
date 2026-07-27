@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check } from "lucide-react";
 
 const THEMES = [
   { id: "sakura",   label: "Sakura",   color: "#f43f5e" },
@@ -33,36 +35,42 @@ export function ThemeSwitcher() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors"
-        style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-[var(--surface-2)]"
+        style={{ border: "1px solid var(--border)" }}
         title="Switch theme"
       >
         <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: active?.color }} />
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>Theme</span>
       </button>
 
-      {open && (
-        <div
-          className="absolute right-0 mt-2 rounded-xl p-2 z-50 flex flex-col gap-1 min-w-[130px]"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}
-        >
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => pick(t.id)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors text-left"
-              style={{
-                backgroundColor: current === t.id ? "var(--surface-2)" : "transparent",
-                color: current === t.id ? "var(--text)" : "var(--text-muted)",
-              }}
-            >
-              <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
-              {t.label}
-              {current === t.id && <span className="ml-auto text-xs" style={{ color: "var(--accent)" }}>✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: -2 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute right-0 mt-2 rounded-2xl p-2 z-50 flex flex-col gap-1 min-w-[132px] origin-top-right"
+            style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", boxShadow: "0 12px 40px rgba(0,0,0,0.5)" }}
+          >
+            {THEMES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => pick(t.id)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors text-left hover:bg-[var(--surface)]"
+                style={{
+                  backgroundColor: current === t.id ? "var(--surface)" : "transparent",
+                  color: current === t.id ? "var(--text)" : "var(--text-muted)",
+                }}
+              >
+                <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                {t.label}
+                {current === t.id && <Check size={12} strokeWidth={3} className="ml-auto" style={{ color: "var(--accent)" }} />}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

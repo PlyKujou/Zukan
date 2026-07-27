@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Source = "mal" | "anilist" | null;
@@ -122,13 +123,13 @@ export function ImportPanel({ userId, onDone }: Props) {
     setImporting(true);
     setError(null);
 
-    const rows = parsed.map((e) => ({ ...e, user_id: userId }));
+    const rows = parsed.map((e) => ({ ...e, user_id: userId, media_type: "anime" }));
 
     // Batch in chunks of 50 to avoid payload limits
     for (let i = 0; i < rows.length; i += 50) {
       const { error: err } = await supabase
         .from("list_entries")
-        .upsert(rows.slice(i, i + 50), { onConflict: "user_id,mal_id" });
+        .upsert(rows.slice(i, i + 50), { onConflict: "user_id,mal_id,media_type" });
       if (err) { setError(err.message); setImporting(false); return; }
     }
 
@@ -151,7 +152,7 @@ export function ImportPanel({ userId, onDone }: Props) {
   if (done) {
     return (
       <div className="text-center py-8">
-        <p className="text-2xl mb-2">✓</p>
+        <CheckCircle2 size={28} strokeWidth={2} className="mx-auto mb-2" style={{ color: "var(--success)" }} />
         <p className="font-semibold mb-1">Import complete</p>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>
           {parsed?.length} anime imported from {source === "mal" ? "MyAnimeList" : "AniList"}.
@@ -190,14 +191,11 @@ export function ImportPanel({ userId, onDone }: Props) {
         </div>
       )}
 
-      {error && <p className="text-sm text-red-400 mt-4">{error}</p>}
+      {error && <p className="text-sm mt-4" style={{ color: "var(--destructive)" }}>{error}</p>}
 
       {/* Preview */}
       {parsed && !done && (
-        <div
-          className="rounded-xl p-5 mt-2"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-        >
+        <div className="card p-5 mt-2">
           <div className="flex items-center justify-between mb-4">
             <p className="font-semibold">
               {parsed.length} anime found
@@ -219,19 +217,14 @@ export function ImportPanel({ userId, onDone }: Props) {
               <div key={status} className="flex items-center justify-between text-sm px-3 py-2 rounded-lg"
                 style={{ backgroundColor: "var(--surface-2)" }}>
                 <span style={{ color: "var(--text-muted)" }}>{STATUS_LABELS[status] ?? status}</span>
-                <span className="font-semibold">{count}</span>
+                <span className="font-semibold font-mono-nums">{count}</span>
               </div>
             ))}
           </div>
 
-          {error && <p className="text-sm text-red-400 mb-3">{error}</p>}
+          {error && <p className="text-sm mb-3" style={{ color: "var(--destructive)" }}>{error}</p>}
 
-          <button
-            onClick={runImport}
-            disabled={importing}
-            className="w-full py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
+          <button onClick={runImport} disabled={importing} className="btn btn-primary w-full py-2.5">
             {importing ? "Importing…" : `Import ${parsed.length} anime`}
           </button>
         </div>
@@ -247,10 +240,10 @@ function SourceCard({ label, sublabel, hint, active, onClick }: {
     <button
       type="button"
       onClick={onClick}
-      className="text-left p-4 rounded-xl cursor-pointer transition-all"
+      className="text-left p-4 rounded-2xl cursor-pointer transition-colors hover:border-[var(--accent-dim-border)]"
       style={{
         backgroundColor: active ? "var(--accent-dim)" : "var(--surface)",
-        border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+        border: `1px solid ${active ? "var(--accent-dim-border)" : "var(--border)"}`,
       }}
     >
       <p className="font-semibold text-sm mb-0.5">{label}</p>

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface Props {
@@ -44,55 +46,54 @@ export function GuildPostForm({ guildId, userId }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full rounded-xl py-3 text-sm mb-6 cursor-pointer transition-colors text-left px-4"
-        style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+        className="card w-full py-3 text-sm mb-6 cursor-pointer transition-colors text-left px-4 flex items-center gap-2 hover:border-[var(--accent-dim-border)]"
+        style={{ color: "var(--text-muted)" }}
       >
-        + Write a post…
+        <Plus size={14} strokeWidth={2.5} />
+        Write a post…
       </button>
     );
   }
 
   return (
-    <form
-      onSubmit={submit}
-      className="rounded-xl p-5 mb-6 space-y-3"
-      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-    >
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Title (optional)"
-        maxLength={100}
-        className="w-full px-3 py-2 rounded-lg text-sm font-semibold"
-        style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
-      />
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="What's on your mind?"
-        rows={4}
-        className="w-full px-3 py-2 rounded-lg text-sm resize-none"
-        style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)" }}
-      />
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 rounded-lg text-sm font-semibold text-white cursor-pointer"
-          style={{ backgroundColor: "var(--accent)" }}
-        >
-          {saving ? "Posting…" : "Post"}
-        </button>
-        <button
-          type="button"
-          onClick={() => { setOpen(false); setError(null); }}
-          className="px-4 py-2 rounded-lg text-sm cursor-pointer"
-          style={{ backgroundColor: "var(--surface-2)", color: "var(--text-muted)" }}
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+    <AnimatePresence>
+      <motion.form
+        initial={{ opacity: 0, y: -8, scale: 0.99 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        onSubmit={submit}
+        className="card p-5 mb-6 space-y-3"
+      >
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title (optional)"
+          maxLength={100}
+          className="w-full px-3.5 py-2 text-sm font-semibold"
+          style={{ backgroundColor: "var(--surface-2)" }}
+        />
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="What's on your mind?"
+          rows={4}
+          className="w-full px-3.5 py-2.5 text-sm resize-none"
+          style={{ backgroundColor: "var(--surface-2)" }}
+        />
+        {error && <p className="text-sm" style={{ color: "var(--destructive)" }}>{error}</p>}
+        <div className="flex gap-2">
+          <button type="submit" disabled={saving} className="btn btn-primary">
+            {saving ? "Posting…" : "Post"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); setError(null); }}
+            className="btn btn-ghost"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.form>
+    </AnimatePresence>
   );
 }

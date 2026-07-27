@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Tab = "write" | "for-you" | "newest";
@@ -79,7 +81,7 @@ function AnimePicker({
     return (
       <div
         className="flex items-center gap-3 p-3 rounded-xl"
-        style={{ backgroundColor: "var(--surface)", border: "1px solid var(--accent)" }}
+        style={{ backgroundColor: "var(--accent-dim)", border: "1px solid var(--accent-dim-border)" }}
       >
         <div className="relative w-10 h-14 shrink-0 rounded overflow-hidden">
           <Image src={value.images.jpg.image_url} alt={value.title} fill className="object-cover" sizes="40px" />
@@ -102,20 +104,20 @@ function AnimePicker({
 
   return (
     <div ref={containerRef} className="relative">
-      <p className="text-xs mb-1.5 font-medium" style={{ color: "var(--text-muted)" }}>{label}</p>
+      <p className="eyebrow mb-1.5">{label}</p>
       <input
         type="text"
         value={query}
         onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Search anime…"
-        className="w-full px-3 py-2 rounded-xl text-sm"
-        style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+        className="w-full px-3.5 py-2 text-sm"
+        style={{ backgroundColor: "var(--surface-2)" }}
       />
       {open && (query.trim() || searching) && (
         <div
-          className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50 shadow-xl"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
+          className="absolute top-full left-0 right-0 mt-1 rounded-xl overflow-hidden z-50"
+          style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", boxShadow: "0 12px 40px rgba(0,0,0,0.5)" }}
         >
           {searching && (
             <p className="text-xs px-3 py-2" style={{ color: "var(--text-muted)" }}>Searching…</p>
@@ -128,7 +130,7 @@ function AnimePicker({
               key={a.mal_id}
               type="button"
               onClick={() => { onSelect(a); setOpen(false); setQuery(""); }}
-              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:opacity-80 transition-opacity cursor-pointer"
+              className="w-full flex items-center gap-3 px-3 py-2 text-left transition-colors cursor-pointer hover:bg-[var(--surface)]"
               style={{ borderTop: "1px solid var(--border)" }}
             >
               <div className="relative w-8 h-11 shrink-0 rounded overflow-hidden">
@@ -136,7 +138,7 @@ function AnimePicker({
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{a.title_english || a.title}</p>
-                {a.episodes && <p className="text-xs" style={{ color: "var(--text-muted)" }}>{a.episodes} eps</p>}
+                {a.episodes && <p className="text-xs font-mono-nums" style={{ color: "var(--text-muted)" }}>{a.episodes} eps</p>}
               </div>
             </button>
           ))}
@@ -149,10 +151,7 @@ function AnimePicker({
 // ── Rec card ─────────────────────────────────────────────────────────────────
 function RecCard({ rec, userId, onDelete }: { rec: Rec; userId: string | null; onDelete?: (id: string) => void }) {
   return (
-    <div
-      className="rounded-2xl p-4"
-      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-    >
+    <div className="card card-hover p-4">
       {/* Anime pair */}
       <div className="flex items-center gap-3 mb-3">
         <Link href={`/anime/${rec.source_mal_id}`} className="flex items-center gap-2 group">
@@ -164,7 +163,7 @@ function RecCard({ rec, userId, onDelete }: { rec: Rec; userId: string | null; o
           </p>
         </Link>
 
-        <span className="text-lg shrink-0" style={{ color: "var(--accent)" }}>→</span>
+        <ArrowRight size={16} strokeWidth={2.5} className="shrink-0" style={{ color: "var(--accent)" }} />
 
         <Link href={`/anime/${rec.target_mal_id}`} className="flex items-center gap-2 group flex-1 min-w-0">
           <div className="relative w-10 h-14 rounded-lg overflow-hidden shrink-0">
@@ -187,13 +186,13 @@ function RecCard({ rec, userId, onDelete }: { rec: Rec; userId: string | null; o
             {rec.profiles?.username ?? "unknown"}
           </Link>
           <span>·</span>
-          <span>{new Date(rec.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+          <span className="font-mono-nums">{new Date(rec.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
         </div>
         {userId === rec.user_id && onDelete && (
           <button
             onClick={() => onDelete(rec.id)}
             className="text-xs cursor-pointer hover:underline"
-            style={{ color: "#f87171" }}
+            style={{ color: "var(--destructive)" }}
           >
             Delete
           </button>
@@ -250,7 +249,8 @@ export default function RecommendationsPage() {
     const { data: entries } = await supabase
       .from("list_entries")
       .select("mal_id")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("media_type", "anime");
     const malIds = (entries ?? []).map((e: { mal_id: number }) => e.mal_id);
     if (malIds.length === 0) { setLoadingForYou(false); return; }
     const { data } = await supabase
@@ -305,24 +305,31 @@ export default function RecommendationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold mb-2">Recommendations</h1>
+      <p className="eyebrow mb-1.5">Community picks</p>
+      <h1 className="text-3xl font-bold mb-2">Recommendations</h1>
       <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
         Liked an anime? Tell others what to watch next.
       </p>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-8 p-1 rounded-xl w-fit" style={{ backgroundColor: "var(--surface)" }}>
+      <div className="flex gap-1 mb-8 p-1 rounded-xl w-fit" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-            style={{
-              backgroundColor: tab === key ? "var(--accent)" : "transparent",
-              color: tab === key ? "#fff" : "var(--text-muted)",
-            }}
+            className={`relative px-4 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+              tab === key ? "text-white" : "text-[var(--text-muted)] hover:text-[var(--text)]"
+            }`}
           >
-            {label}
+            {tab === key && (
+              <motion.span
+                layoutId="recs-tab"
+                className="absolute inset-0 rounded-lg"
+                style={{ backgroundColor: "var(--accent)" }}
+                transition={{ type: "spring", stiffness: 500, damping: 40 }}
+              />
+            )}
+            <span className="relative">{label}</span>
           </button>
         ))}
       </div>
@@ -370,7 +377,7 @@ export default function RecommendationsPage() {
             </p>
           ) : writeSuccess ? (
             <div className="text-center py-12">
-              <p className="text-2xl mb-2">✓</p>
+              <CheckCircle2 size={28} strokeWidth={2} className="mx-auto mb-2" style={{ color: "var(--success)" }} />
               <p className="font-semibold">Recommendation posted!</p>
               <button
                 onClick={() => setWriteSuccess(false)}
@@ -382,10 +389,7 @@ export default function RecommendationsPage() {
             </div>
           ) : (
             <form onSubmit={submitRec} className="space-y-5">
-              <div
-                className="rounded-2xl p-5 space-y-5"
-                style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-              >
+              <div className="card p-5 space-y-5">
                 <AnimePicker
                   label="If you liked…"
                   value={sourceAnime}
@@ -394,7 +398,7 @@ export default function RecommendationsPage() {
 
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-px" style={{ backgroundColor: "var(--border)" }} />
-                  <span className="text-sm font-bold" style={{ color: "var(--accent)" }}>→</span>
+                  <ArrowRight size={14} strokeWidth={2.5} style={{ color: "var(--accent)" }} />
                   <div className="flex-1 h-px" style={{ backgroundColor: "var(--border)" }} />
                 </div>
 
@@ -406,34 +410,22 @@ export default function RecommendationsPage() {
               </div>
 
               <div>
-                <label className="text-sm block mb-1.5 font-medium" style={{ color: "var(--text-muted)" }}>
-                  Why should they watch it?
-                </label>
+                <label className="eyebrow block mb-1.5">Why should they watch it?</label>
                 <textarea
                   rows={4}
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   placeholder="Both have incredible world-building and a similar dark tone…"
-                  className="w-full px-3 py-2 rounded-xl text-sm resize-none"
-                  style={{
-                    backgroundColor: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text)",
-                  }}
+                  className="w-full px-3.5 py-2.5 text-sm resize-none"
                 />
-                <p className="text-xs mt-1 text-right" style={{ color: "var(--text-muted)" }}>
+                <p className="text-xs mt-1 text-right font-mono-nums" style={{ color: "var(--text-muted)" }}>
                   {body.length} chars {body.length < 10 && body.length > 0 ? "(min 10)" : ""}
                 </p>
               </div>
 
-              {writeError && <p className="text-sm text-red-400">{writeError}</p>}
+              {writeError && <p className="text-sm" style={{ color: "var(--destructive)" }}>{writeError}</p>}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer"
-                style={{ backgroundColor: "var(--accent)" }}
-              >
+              <button type="submit" disabled={submitting} className="btn btn-primary w-full py-2.5">
                 {submitting ? "Posting…" : "Post recommendation"}
               </button>
             </form>

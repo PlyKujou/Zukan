@@ -1,12 +1,17 @@
 const ENDPOINT = "https://graphql.anilist.co";
 
+export type MediaType = "anime" | "manga";
+
 export interface Anime {
   mal_id: number;
+  mediaType: MediaType;
   title: string;
   title_english: string | null;
   images: { jpg: { image_url: string; large_image_url: string } };
   synopsis: string | null;
   episodes: number | null;
+  chapters: number | null;
+  volumes: number | null;
   score: number | null;
   genres: { mal_id: number; name: string }[];
   status: string;
@@ -21,16 +26,23 @@ export type JikanAnime = Anime;
 interface AnilistMedia {
   id: number;
   idMal: number | null;
+  type: "ANIME" | "MANGA";
   title: { romaji: string; english: string | null };
   coverImage: { large: string; extraLarge: string };
   description: string | null;
   episodes: number | null;
+  chapters: number | null;
+  volumes: number | null;
   averageScore: number | null;
   genres: string[];
   status: string;
   startDate: { year: number | null; month: number | null; day: number | null };
   seasonYear: number | null;
   nextAiringEpisode: { episode: number; airingAt: number } | null;
+}
+
+function gqlType(mediaType: MediaType): "ANIME" | "MANGA" {
+  return mediaType === "manga" ? "MANGA" : "ANIME";
 }
 
 const STATUS_MAP: Record<string, string> = {
@@ -47,11 +59,11 @@ const DAY_NAMES = ["sundays", "mondays", "tuesdays", "wednesdays", "thursdays", 
 const TAG_GENRES = new Set(["Shounen", "Shoujo", "Seinen", "Josei", "Isekai"]);
 
 const MEDIA_FIELDS = `
-  id idMal
+  id idMal type
   title { romaji english }
   coverImage { large extraLarge }
   description(asHtml: false)
-  episodes averageScore genres status
+  episodes chapters volumes averageScore genres status
   startDate { year month day }
   seasonYear
   nextAiringEpisode { episode airingAt }
@@ -72,7 +84,7 @@ function mapMedia(m: AnilistMedia): Anime | null {
   if (m.idMal == null) return null;
 
   let broadcast: Anime["broadcast"] = null;
-  if (m.nextAiringEpisode) {
+  if (m.nextAiringEpisode && m.type === "ANIME") {
     // Convert Unix timestamp to JST (UTC+9) to get correct broadcast day/time
     const jstMs = m.nextAiringEpisode.airingAt * 1000 + 9 * 3600 * 1000;
     const jst = new Date(jstMs);
@@ -90,6 +102,7 @@ function mapMedia(m: AnilistMedia): Anime | null {
 
   return {
     mal_id: m.idMal,
+    mediaType: m.type === "MANGA" ? "manga" : "anime",
     title: m.title.romaji,
     title_english: m.title.english,
     images: {
@@ -100,6 +113,8 @@ function mapMedia(m: AnilistMedia): Anime | null {
     },
     synopsis: m.description ? stripHtml(m.description) : null,
     episodes: m.episodes,
+    chapters: m.chapters,
+    volumes: m.volumes,
     score: m.averageScore != null ? m.averageScore / 10 : null,
     genres: m.genres.map((name, i) => ({ mal_id: i + 1, name })),
     status: STATUS_MAP[m.status] ?? m.status,
@@ -141,13 +156,14 @@ function currentSeason(): { season: string; year: number } {
 
 export async function searchAnime(
   q: string,
-  page = 1
+  page = 1,
+  mediaType: MediaType = "anime"
 ): Promise<{ data: Anime[]; pagination: { last_visible_page: number } } | null> {
   const data = await gql<{ Page: { pageInfo: { lastPage: number }; media: AnilistMedia[] } }>(
     `query ($search: String, $page: Int) {
       Page(page: $page, perPage: 20) {
         pageInfo { lastPage }
-        media(search: $search, type: ANIME, sort: SEARCH_MATCH) { ${MEDIA_FIELDS} }
+        media(search: $search, type: ${gqlType(mediaType)}, sort: SEARCH_MATCH) { ${MEDIA_FIELDS} }
       }
     }`,
     { search: q, page },
@@ -158,10 +174,10 @@ export async function searchAnime(
   return { data: items, pagination: { last_visible_page: data.Page.pageInfo.lastPage } };
 }
 
-export async function getAnime(malId: number): Promise<{ data: Anime } | null> {
+export async function getAnime(malId: number, mediaType: MediaType = "anime"): Promise<{ data: Anime } | null> {
   const data = await gql<{ Media: AnilistMedia }>(
     `query ($idMal: Int) {
-      Media(idMal: $idMal, type: ANIME) { ${MEDIA_FIELDS} }
+      Media(idMal: $idMal, type: ${gqlType(mediaType)}) { ${MEDIA_FIELDS} }
     }`,
     { idMal: malId },
     86400
@@ -173,13 +189,14 @@ export async function getAnime(malId: number): Promise<{ data: Anime } | null> {
 
 export async function getTopAnime(
   filter: "airing" | "bypopularity" | "favorite" = "bypopularity",
-  limit = 12
+  limit = 12,
+  mediaType: MediaType = "anime"
 ): Promise<Anime[]> {
   const sortMap = { airing: "TRENDING_DESC", bypopularity: "POPULARITY_DESC", favorite: "FAVOURITES_DESC" };
   const data = await gql<{ Page: { media: AnilistMedia[] } }>(
     `query ($limit: Int) {
       Page(perPage: $limit) {
-        media(type: ANIME, sort: ${sortMap[filter]}, status_not: NOT_YET_RELEASED) { ${MEDIA_FIELDS} }
+        media(type: ${gqlType(mediaType)}, sort: ${sortMap[filter]}, status_not: NOT_YET_RELEASED) { ${MEDIA_FIELDS} }
       }
     }`,
     { limit }
@@ -202,12 +219,12 @@ export async function getSeasonNow(limit = 12): Promise<Anime[]> {
   return data.Page.media.map(mapMedia).filter((a): a is Anime => a !== null).slice(0, limit);
 }
 
-export async function getAnimeByGenre(genre: string, limit = 14): Promise<Anime[]> {
+export async function getAnimeByGenre(genre: string, limit = 14, mediaType: MediaType = "anime"): Promise<Anime[]> {
   const filterKey = TAG_GENRES.has(genre) ? "tag" : "genre";
   const data = await gql<{ Page: { media: AnilistMedia[] } }>(
     `query ($limit: Int) {
       Page(perPage: $limit) {
-        media(type: ANIME, ${filterKey}: "${genre}", sort: SCORE_DESC, averageScore_greater: 70, status_not: NOT_YET_RELEASED) { ${MEDIA_FIELDS} }
+        media(type: ${gqlType(mediaType)}, ${filterKey}: "${genre}", sort: SCORE_DESC, averageScore_greater: 70, status_not: NOT_YET_RELEASED) { ${MEDIA_FIELDS} }
       }
     }`,
     { limit }

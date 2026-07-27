@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Check, Heart, Star, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Anime } from "@/lib/anilist";
 
@@ -78,11 +79,14 @@ async function fetchBatch(genres: string[], page: number): Promise<Anime[]> {
       .filter((m) => m.idMal != null)
       .map((m): Anime => ({
         mal_id: m.idMal!,
+        mediaType: "anime",
         title: m.title.romaji,
         title_english: m.title.english,
         images: { jpg: { image_url: m.coverImage.large, large_image_url: m.coverImage.extraLarge || m.coverImage.large } },
         synopsis: m.description,
         episodes: m.episodes,
+        chapters: null,
+        volumes: null,
         score: m.averageScore != null ? m.averageScore / 10 : null,
         genres: m.genres.map((name, i) => ({ mal_id: i + 1, name })),
         status: m.status,
@@ -127,7 +131,7 @@ export default function DiscoverPage() {
     dismissedRef.current = loadDismissed();
 
     const [{ data: entries }, { data: profile }] = await Promise.all([
-      supabase.from("list_entries").select("mal_id").eq("user_id", user.id),
+      supabase.from("list_entries").select("mal_id").eq("user_id", user.id).eq("media_type", "anime"),
       supabase.from("profiles").select("favorite_genres").eq("id", user.id).maybeSingle(),
     ]);
 
@@ -229,12 +233,13 @@ export default function DiscoverPage() {
       supabase.from("list_entries").upsert({
         user_id: userId,
         mal_id: current.mal_id,
+        media_type: "anime",
         title: current.title_english || current.title,
         image_url: current.images.jpg.image_url,
         episodes: current.episodes,
         status: "plan_to_watch",
         progress: 0,
-      }, { onConflict: "user_id,mal_id" }).then(() => {
+      }, { onConflict: "user_id,mal_id,media_type" }).then(() => {
         setListIds((prev) => new Set([...prev, current.mal_id]));
       });
     }
@@ -261,7 +266,7 @@ export default function DiscoverPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-lg font-semibold">Sign in to discover anime</p>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>We use your genre preferences to find your next watch.</p>
-        <Link href="/login" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: "var(--accent)" }}>
+        <Link href="/login" className="btn btn-primary px-5 py-2.5">
           Log in
         </Link>
       </div>
@@ -273,7 +278,7 @@ export default function DiscoverPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-2xl font-bold">You&apos;re all caught up!</p>
         <p className="text-sm" style={{ color: "var(--text-muted)" }}>No more anime to discover right now.</p>
-        <Link href="/dashboard" className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: "var(--accent)" }}>
+        <Link href="/dashboard" className="btn btn-primary px-5 py-2.5">
           View my list
         </Link>
       </div>
@@ -285,8 +290,11 @@ export default function DiscoverPage() {
       <div className="w-full max-w-sm">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-lg font-bold">Match</h1>
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <p className="eyebrow mb-1">Discover</p>
+            <h1 className="text-xl font-bold">Match</h1>
+          </div>
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             Swipe right to add · left to skip
           </span>
@@ -337,11 +345,11 @@ export default function DiscoverPage() {
                 className="absolute inset-0 flex items-start justify-start p-6 rounded-2xl transition-opacity"
                 style={{
                   opacity: showAdd ? Math.min((offset - 40) / 60, 1) : 0,
-                  background: "linear-gradient(135deg, rgba(34,197,94,0.35), transparent)",
+                  background: "linear-gradient(135deg, rgba(70,214,154,0.35), transparent)",
                   pointerEvents: "none",
                 }}
               >
-                <span className="text-2xl font-black border-4 px-3 py-1 rounded-lg rotate-[-12deg]" style={{ color: "#22c55e", borderColor: "#22c55e" }}>
+                <span className="text-2xl font-black border-4 px-3 py-1 rounded-xl rotate-[-12deg]" style={{ color: "var(--success)", borderColor: "var(--success)" }}>
                   ADD
                 </span>
               </div>
@@ -350,11 +358,11 @@ export default function DiscoverPage() {
                 className="absolute inset-0 flex items-start justify-end p-6 rounded-2xl transition-opacity"
                 style={{
                   opacity: showSkip ? Math.min((-offset - 40) / 60, 1) : 0,
-                  background: "linear-gradient(225deg, rgba(239,68,68,0.3), transparent)",
+                  background: "linear-gradient(225deg, rgba(255,92,92,0.3), transparent)",
                   pointerEvents: "none",
                 }}
               >
-                <span className="text-2xl font-black border-4 px-3 py-1 rounded-lg rotate-[12deg]" style={{ color: "#ef4444", borderColor: "#ef4444" }}>
+                <span className="text-2xl font-black border-4 px-3 py-1 rounded-xl rotate-[12deg]" style={{ color: "var(--destructive)", borderColor: "var(--destructive)" }}>
                   SKIP
                 </span>
               </div>
@@ -363,32 +371,33 @@ export default function DiscoverPage() {
         </div>
 
         {added && (
-          <div className="text-center mt-3 text-sm font-semibold" style={{ color: "#22c55e" }}>
-            Added to Plan to Watch ✓
+          <div className="flex items-center justify-center gap-1.5 mt-3 text-sm font-semibold" style={{ color: "var(--success)" }}>
+            <Check size={14} strokeWidth={3} />
+            Added to Plan to Watch
           </div>
         )}
 
         <div className="flex items-center justify-center gap-6 mt-6">
           <button
             onClick={() => triggerSwipe("left")}
-            className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold cursor-pointer transition-transform hover:scale-110"
-            style={{ backgroundColor: "var(--surface)", border: "2px solid #ef4444", color: "#ef4444" }}
+            className="w-14 h-14 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95"
+            style={{ backgroundColor: "var(--surface)", border: "2px solid var(--destructive)", color: "var(--destructive)" }}
           >
-            ✕
+            <X size={22} strokeWidth={2.5} />
           </button>
           <Link
             href={current ? `/anime/${current.mal_id}` : "#"}
-            className="px-4 py-2 rounded-full text-xs font-medium"
+            className="px-4 py-2 rounded-full text-xs font-medium transition-colors hover:bg-[var(--surface-2)]"
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
           >
             Details
           </Link>
           <button
             onClick={() => triggerSwipe("right")}
-            className="w-14 h-14 rounded-full flex items-center justify-center text-xl cursor-pointer transition-transform hover:scale-110"
-            style={{ backgroundColor: "var(--surface)", border: "2px solid #22c55e", color: "#22c55e" }}
+            className="w-14 h-14 rounded-full flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95"
+            style={{ backgroundColor: "var(--surface)", border: "2px solid var(--success)", color: "var(--success)" }}
           >
-            ♥
+            <Heart size={22} strokeWidth={2.5} />
           </button>
         </div>
 
@@ -416,12 +425,13 @@ function CardContent({ anime }: { anime: Anime }) {
       <div className="absolute bottom-0 left-0 right-0 p-5">
         <div className="flex items-center gap-2 mb-1.5">
           {anime.score && (
-            <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "var(--accent)", color: "#fff" }}>
-              ★ {anime.score}
+            <span className="flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded font-mono-nums" style={{ backgroundColor: "rgba(11,9,8,0.7)", color: "var(--accent-2)" }}>
+              <Star size={10} fill="currentColor" strokeWidth={0} />
+              {anime.score}
             </span>
           )}
-          {anime.year && <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.year}</span>}
-          {anime.episodes && <span className="text-xs" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.episodes} eps</span>}
+          {anime.year && <span className="text-xs font-mono-nums" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.year}</span>}
+          {anime.episodes && <span className="text-xs font-mono-nums" style={{ color: "rgba(255,255,255,0.6)" }}>{anime.episodes} eps</span>}
         </div>
         <h2 className="text-lg font-bold text-white leading-tight mb-2">{title}</h2>
         <div className="flex flex-wrap gap-1 mb-3">

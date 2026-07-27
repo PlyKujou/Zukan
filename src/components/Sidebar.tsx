@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import {
@@ -28,16 +29,31 @@ interface NavItem {
   authRequired?: boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { href: "/",                label: "Home",       icon: Home },
-  { href: "/search",          label: "Search",     icon: Search },
-  { href: "/season",          label: "Season",     icon: Tv2 },
-  { href: "/guilds",          label: "Guilds",     icon: Shield },
-  { href: "/recommendations", label: "Recs",       icon: Sparkles,  authRequired: true },
-  { href: "/discover",        label: "Match",      icon: Zap,       authRequired: true },
-  { href: "/activity",        label: "Activity",   icon: Rss,       authRequired: true },
-  { href: "/dashboard",       label: "My Lists",   icon: Library,   authRequired: true },
-  { href: "/stats",           label: "Stats",      icon: BarChart2, authRequired: true },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Browse",
+    items: [
+      { href: "/",       label: "Home",   icon: Home },
+      { href: "/search", label: "Search", icon: Search },
+      { href: "/season", label: "Season", icon: Tv2 },
+      { href: "/guilds", label: "Guilds", icon: Shield },
+    ],
+  },
+  {
+    label: "Library",
+    items: [
+      { href: "/dashboard",       label: "My Lists", icon: Library,   authRequired: true },
+      { href: "/recommendations", label: "Recs",     icon: Sparkles,  authRequired: true },
+      { href: "/discover",        label: "Match",    icon: Zap,       authRequired: true },
+      { href: "/activity",        label: "Activity", icon: Rss,       authRequired: true },
+      { href: "/stats",           label: "Stats",    icon: BarChart2, authRequired: true },
+    ],
+  },
 ];
 
 // ── Logo SVG ────────────────────────────────────────────────────────────────
@@ -51,29 +67,18 @@ function ZukanMark({ size = 32 }: { size?: number }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Background */}
-      <rect width="32" height="32" rx="8" fill="var(--accent)" />
-      {/* Subtle inner gradient highlight */}
-      <rect width="32" height="32" rx="8" fill="url(#zg)" />
-      {/* Z mark — three-stroke geometric Z */}
-      <path
-        d="M8.5 10.5 H23.5"
-        stroke="white" strokeWidth="3" strokeLinecap="round"
-      />
+      <rect width="32" height="32" rx="9" fill="var(--accent)" />
+      <rect width="32" height="32" rx="9" fill="url(#zg)" />
+      <path d="M8.5 10.5 H23.5" stroke="white" strokeWidth="3" strokeLinecap="round" />
       <path
         d="M23.5 10.5 L8.5 21.5"
-        stroke="white" strokeWidth="2.5" strokeLinecap="round"
-        strokeOpacity="0.85"
+        stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.85"
       />
-      <path
-        d="M8.5 21.5 H23.5"
-        stroke="white" strokeWidth="3" strokeLinecap="round"
-      />
-      {/* Accent dot — top-right corner detail */}
-      <circle cx="25.5" cy="7.5" r="2" fill="white" fillOpacity="0.35" />
+      <path d="M8.5 21.5 H23.5" stroke="white" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="25.5" cy="7.5" r="2" fill="white" fillOpacity="0.4" />
       <defs>
         <linearGradient id="zg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="white" stopOpacity="0.12" />
+          <stop offset="0%" stopColor="white" stopOpacity="0.16" />
           <stop offset="100%" stopColor="white" stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -97,29 +102,25 @@ function NavLink({
     <Link
       href={item.href}
       onClick={onClick}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
-      style={{
-        backgroundColor: active ? "var(--accent-dim)" : "transparent",
-        color: active ? "var(--accent)" : "var(--text-muted)",
-      }}
-      onMouseEnter={(e) => {
-        if (!active) {
-          (e.currentTarget as HTMLElement).style.backgroundColor = "var(--surface-2)";
-          (e.currentTarget as HTMLElement).style.color = "var(--text)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!active) {
-          (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-          (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-        }
-      }}
+      className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-150 ${
+        active
+          ? "text-[var(--accent)]"
+          : "text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+      }`}
     >
-      <Icon size={17} strokeWidth={active ? 2.5 : 2} style={{ flexShrink: 0 }} />
-      <span>{item.label}</span>
       {active && (
-        <span className="ml-auto w-1 h-4 rounded-full" style={{ backgroundColor: "var(--accent)" }} />
+        <motion.span
+          layoutId="nav-active"
+          className="absolute inset-0 rounded-xl"
+          style={{
+            backgroundColor: "var(--accent-dim)",
+            border: "1px solid var(--accent-dim-border)",
+          }}
+          transition={{ type: "spring", stiffness: 500, damping: 40 }}
+        />
       )}
+      <Icon size={17} strokeWidth={active ? 2.5 : 2} className="relative shrink-0" />
+      <span className="relative">{item.label}</span>
     </Link>
   );
 }
@@ -148,15 +149,14 @@ function SidebarContent({
     window.location.href = "/";
   }
 
-  const visibleItems = NAV_ITEMS.filter((item) => !item.authRequired || user);
   const name = displayName || username;
 
   return (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-4 py-5 mb-1">
+      <div className="px-5 py-6 mb-1">
         <Link href="/" onClick={onClose} className="flex items-center gap-2.5">
-          <ZukanMark size={32} />
+          <ZukanMark size={30} />
           <span className="font-bold text-base tracking-tight" style={{ color: "var(--text)" }}>
             Zukan
           </span>
@@ -164,12 +164,25 @@ function SidebarContent({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-        {visibleItems.map((item) => {
-          const active =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+      <nav className="flex-1 px-3 overflow-y-auto space-y-6">
+        {NAV_GROUPS.map((group) => {
+          const visible = group.items.filter((item) => !item.authRequired || user);
+          if (visible.length === 0) return null;
           return (
-            <NavLink key={item.href} item={item} active={active} onClick={onClose} />
+            <div key={group.label}>
+              <p className="eyebrow px-3 mb-2" style={{ fontSize: "0.625rem" }}>
+                {group.label}
+              </p>
+              <div className="space-y-0.5">
+                {visible.map((item) => {
+                  const active =
+                    item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+                  return (
+                    <NavLink key={item.href} item={item} active={active} onClick={onClose} />
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </nav>
@@ -180,11 +193,7 @@ function SidebarContent({
       {/* Profile card or auth buttons */}
       <div className="px-3 pb-4">
         {user ? (
-          <div
-            className="rounded-xl p-3"
-            style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
-          >
-            {/* Avatar + name row */}
+          <div className="card p-3" style={{ backgroundColor: "var(--surface-2)" }}>
             <Link
               href={username ? `/profile/${username}` : "#"}
               onClick={onClose}
@@ -218,26 +227,16 @@ function SidebarContent({
                   {name ?? "Profile"}
                 </p>
                 {username && (
-                  <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>
+                  <p className="text-xs truncate font-mono-nums" style={{ color: "var(--text-muted)" }}>
                     @{username}
                   </p>
                 )}
               </div>
             </Link>
 
-            {/* Sign out */}
             <button
               onClick={signOut}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors"
-              style={{ color: "var(--text-muted)" }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = "var(--surface)";
-                (e.currentTarget as HTMLElement).style.color = "var(--destructive)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-              }}
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--destructive)]"
             >
               <LogOut size={13} strokeWidth={2} />
               Sign out
@@ -246,7 +245,7 @@ function SidebarContent({
         ) : (
           <div className="space-y-1.5">
             <div
-              className="rounded-xl p-3 mb-2"
+              className="rounded-2xl p-3 mb-2"
               style={{ backgroundColor: "var(--accent-dim)", border: "1px solid var(--accent-dim-border)" }}
             >
               <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--accent)" }}>
@@ -256,34 +255,10 @@ function SidebarContent({
                 Track your lists, rate anime, and discover what to watch next.
               </p>
             </div>
-            <Link
-              href="/login"
-              onClick={onClose}
-              className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-medium w-full transition-colors"
-              style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = "var(--surface-2)";
-                (e.currentTarget as HTMLElement).style.color = "var(--text)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
-                (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-              }}
-            >
+            <Link href="/login" onClick={onClose} className="btn btn-ghost w-full text-sm py-2">
               Log in
             </Link>
-            <Link
-              href="/signup"
-              onClick={onClose}
-              className="flex items-center justify-center px-3 py-2 rounded-lg text-sm font-semibold text-white w-full transition-colors"
-              style={{ backgroundColor: "var(--accent)" }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent-hover)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.backgroundColor = "var(--accent)";
-              }}
-            >
+            <Link href="/signup" onClick={onClose} className="btn btn-primary w-full text-sm py-2">
               Sign up free
             </Link>
           </div>
@@ -342,11 +317,10 @@ export function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <aside
-        className="fixed top-0 left-0 h-screen w-[220px] hidden lg:flex flex-col z-40"
+        className="fixed top-0 left-0 h-screen w-[228px] hidden lg:flex flex-col z-40"
         style={{
           backgroundColor: "var(--surface)",
           borderRight: "1px solid var(--border)",
-          boxShadow: "inset -1px 0 0 rgba(99,102,241,0.15), 4px 0 24px rgba(0,0,0,0.3)",
         }}
       >
         <SidebarContent {...sharedProps} />
@@ -356,7 +330,8 @@ export function Sidebar() {
       <header
         className="fixed top-0 left-0 right-0 h-14 flex items-center justify-between px-4 z-40 lg:hidden"
         style={{
-          backgroundColor: "var(--surface)",
+          backgroundColor: "rgba(11, 9, 8, 0.85)",
+          backdropFilter: "blur(12px)",
           borderBottom: "1px solid var(--border)",
         }}
       >
@@ -368,37 +343,48 @@ export function Sidebar() {
         </Link>
         <button
           onClick={() => setMobileOpen(true)}
-          className="p-2 rounded-lg cursor-pointer"
-          style={{ color: "var(--text-muted)" }}
+          aria-label="Open menu"
+          className="p-2 rounded-lg cursor-pointer text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
         >
           <Menu size={20} />
         </button>
       </header>
 
       {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setMobileOpen(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div
-            className="absolute top-0 left-0 h-full w-[220px]"
-            style={{
-              backgroundColor: "var(--surface)",
-              borderRight: "1px solid var(--border)",
-              animation: "slide-in-left 0.2s cubic-bezier(0.22,1,0.36,1) both",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg cursor-pointer"
-              style={{ color: "var(--text-muted)" }}
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setMobileOpen(false)}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ x: -240 }}
+              animate={{ x: 0 }}
+              exit={{ x: -240 }}
+              transition={{ type: "spring", stiffness: 400, damping: 38 }}
+              className="absolute top-0 left-0 h-full w-[228px]"
+              style={{
+                backgroundColor: "var(--surface)",
+                borderRight: "1px solid var(--border)",
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <X size={18} />
-            </button>
-            <SidebarContent {...sharedProps} onClose={() => setMobileOpen(false)} />
+              <button
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+                className="absolute top-5 right-4 p-1.5 rounded-lg cursor-pointer text-[var(--text-muted)] hover:text-[var(--text)] transition-colors"
+              >
+                <X size={18} />
+              </button>
+              <SidebarContent {...sharedProps} onClose={() => setMobileOpen(false)} />
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 }

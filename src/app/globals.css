@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
-/* ── Default theme (Zukan Dark) ── */
+/* ── Default theme (Zukan Ink) ── */
 :root {
-  --bg: #08080f;
-  --surface: #0e0e1c;
-  --surface-2: #141428;
-  --border: #1c1c38;
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
-  --accent-dim: rgba(99, 102, 241, 0.12);
-  --accent-dim-border: rgba(99, 102, 241, 0.25);
-  --text: #eeeeff;
-  --text-muted: #6366a0;
-  --destructive: #f87171;
-  --success: #34d399;
-  --warning: #fbbf24;
+  --bg: #0b0908;
+  --surface: #14100e;
+  --surface-2: #1e1815;
+  --border: #2b241f;
+  --accent: #ff4e2a;
+  --accent-hover: #ff6f4f;
+  --accent-dim: rgba(255, 78, 42, 0.12);
+  --accent-dim-border: rgba(255, 78, 42, 0.3);
+  --accent-2: #ffb257;
+  --accent-2-dim: rgba(255, 178, 87, 0.14);
+  --text: #f4ede3;
+  --text-muted: #9c8f80;
+  --destructive: #ff5c5c;
+  --success: #46d69a;
+  --warning: #ffb257;
 }
 
 /* ── Theme slots — future structural themes override these ── */
@@ -29,8 +31,16 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent2: var(--accent-2);
   --color-text: var(--text);
   --color-muted: var(--text-muted);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 14px;
+  --radius-3xl: 20px;
 }
 
 /* ── Base ── */
@@ -47,19 +57,37 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dot grid on body background */
+/* Warm top wash */
 body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 90% 40% at 50% -8%, rgba(255, 78, 42, 0.07), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 110%, rgba(255, 178, 87, 0.04), transparent 70%);
+}
+
+/* Film grain */
+body::after {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: radial-gradient(circle, rgba(99,102,241,0.07) 1px, transparent 1px);
-  background-size: 28px 28px;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
 }
 
 /* ── Scrollbar ── */
@@ -80,14 +108,82 @@ body::before {
 
 /* ── Typography ── */
 h1, h2, h3, h4 {
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
 }
 
-/* ── Utilities ── */
+.eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
 .font-mono-nums {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
+}
+
+/* ── Surfaces ── */
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.card-hover {
+  transition: border-color 0.2s, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+}
+.card-hover:hover {
+  border-color: var(--accent-dim-border);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5625rem 1.125rem;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.2s, transform 0.1s;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover {
+  background-color: var(--accent-hover);
+  box-shadow: 0 4px 24px rgba(255, 78, 42, 0.35);
+}
+.btn-secondary {
+  background-color: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-secondary:hover {
+  border-color: var(--text-muted);
+}
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.btn-ghost:hover {
+  color: var(--text);
+  background-color: var(--surface-2);
 }
 
 /* ── Focus ── */
@@ -97,57 +193,45 @@ h1, h2, h3, h4 {
   border-radius: 4px;
 }
 
-/* ── Animations ── */
+/* ── Entrance stagger for server-rendered grids (client lists use framer-motion) ── */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-@keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-16px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-.page-enter {
-  animation: fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.modal-enter {
-  animation: scale-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 .stagger > * {
-  animation: fade-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .stagger > *:nth-child(1)  { animation-delay: 0ms; }
-.stagger > *:nth-child(2)  { animation-delay: 40ms; }
-.stagger > *:nth-child(3)  { animation-delay: 80ms; }
-.stagger > *:nth-child(4)  { animation-delay: 120ms; }
-.stagger > *:nth-child(5)  { animation-delay: 160ms; }
-.stagger > *:nth-child(6)  { animation-delay: 200ms; }
-.stagger > *:nth-child(n+7){ animation-delay: 240ms; }
+.stagger > *:nth-child(2)  { animation-delay: 45ms; }
+.stagger > *:nth-child(3)  { animation-delay: 90ms; }
+.stagger > *:nth-child(4)  { animation-delay: 135ms; }
+.stagger > *:nth-child(5)  { animation-delay: 180ms; }
+.stagger > *:nth-child(6)  { animation-delay: 225ms; }
+.stagger > *:nth-child(n+7){ animation-delay: 270ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger > * {
+    animation-duration: 0.01ms;
+    animation-delay: 0ms;
+  }
+  .card-hover:hover {
+    transform: none;
+  }
+}
 
 /* ── Input base ── */
 input, textarea, select {
   background-color: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 8px;
-  transition: border-color 0.15s;
+  border-radius: 10px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 input::placeholder, textarea::placeholder {
   color: var(--text-muted);

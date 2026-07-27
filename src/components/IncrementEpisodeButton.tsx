@@ -27,20 +27,21 @@ export function IncrementEpisodeButton({ entryId, malId, userId, initialProgress
       .from("list_entries")
       .update({ progress: next, updated_at: new Date().toISOString() })
       .eq("user_id", userId)
-      .eq("mal_id", malId);
+      .eq("mal_id", malId)
+      .eq("media_type", "anime");
     setSaving(false);
   }
 
   return (
     <div className="flex items-center gap-2 shrink-0">
-      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+      <span className="text-xs font-mono-nums" style={{ color: "var(--text-muted)" }}>
         {progress}{episodes ? `/${episodes}` : ""} ep{progress !== 1 ? "s" : ""}
       </span>
       <button
         onClick={increment}
         disabled={saving || (episodes !== null && progress >= (episodes ?? Infinity))}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-95 hover:opacity-80 disabled:opacity-40 disabled:cursor-default"
-        style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)", border: "1px solid var(--accent-dim-border)" }}
+        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold font-mono-nums cursor-pointer transition-all active:scale-95 hover:bg-[var(--accent-dim)] disabled:opacity-40 disabled:cursor-default"
+        style={{ color: "var(--accent)", border: "1px solid var(--accent-dim-border)" }}
         title="Mark one episode watched"
       >
         +1 ep

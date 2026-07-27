@@ -33,7 +33,7 @@ export function GuildActions({ guildId, isMember, isOwner, userId }: Props) {
   if (isOwner) {
     return (
       <span
-        className="px-3 py-1.5 rounded-lg text-xs font-bold"
+        className="eyebrow px-3 py-1.5 rounded-lg"
         style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)", border: "1px solid var(--accent-dim-border)" }}
       >
         Owner
@@ -43,24 +43,14 @@ export function GuildActions({ guildId, isMember, isOwner, userId }: Props) {
 
   if (isMember) {
     return (
-      <button
-        onClick={leave}
-        disabled={loading}
-        className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-colors"
-        style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
-      >
+      <button onClick={leave} disabled={loading} className="btn btn-ghost">
         {loading ? "…" : "Leave"}
       </button>
     );
   }
 
   return (
-    <button
-      onClick={join}
-      disabled={loading}
-      className="px-4 py-2 rounded-xl text-sm font-semibold text-white cursor-pointer"
-      style={{ backgroundColor: "var(--accent)" }}
-    >
+    <button onClick={join} disabled={loading} className="btn btn-primary">
       {loading ? "…" : "Join Guild"}
     </button>
   );

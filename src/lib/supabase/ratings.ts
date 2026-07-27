@@ -1,12 +1,14 @@
 import { createClient } from "./server";
+import type { MediaType } from "@/lib/anilist";
 
 /** Returns a map of mal_id → average Zukan rating string for the given ids. */
-export async function getZukanRatings(malIds: number[]): Promise<Record<number, string>> {
+export async function getZukanRatings(malIds: number[], mediaType: MediaType = "anime"): Promise<Record<number, string>> {
   if (malIds.length === 0) return {};
   const supabase = await createClient();
   const { data } = await supabase
     .from("reviews")
     .select("mal_id, rating")
+    .eq("media_type", mediaType)
     .in("mal_id", malIds);
   if (!data || data.length === 0) return {};
 

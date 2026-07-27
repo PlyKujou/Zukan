@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { GENRES } from "@/lib/genres";
 import { ImportPanel } from "@/components/ImportPanel";
 import { ExportPanel } from "@/components/ExportPanel";
@@ -91,21 +92,28 @@ export default function EditProfilePage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
+      <p className="eyebrow mb-1.5">Settings</p>
+      <h1 className="text-3xl font-bold mb-6">Edit Profile</h1>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-8 p-1 rounded-xl w-fit" style={{ backgroundColor: "var(--surface)" }}>
+      <div className="flex gap-1 mb-8 p-1 rounded-xl w-fit" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
         {TABS.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => { setTab(key); setMessage(null); }}
-            className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer"
-            style={{
-              backgroundColor: tab === key ? "var(--accent)" : "transparent",
-              color: tab === key ? "#fff" : "var(--text-muted)",
-            }}
+            className={`relative px-4 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
+              tab === key ? "text-white" : "text-[var(--text-muted)] hover:text-[var(--text)]"
+            }`}
           >
-            {label}
+            {tab === key && (
+              <motion.span
+                layoutId="edit-tab"
+                className="absolute inset-0 rounded-lg"
+                style={{ backgroundColor: "var(--accent)" }}
+                transition={{ type: "spring", stiffness: 500, damping: 40 }}
+              />
+            )}
+            <span className="relative">{label}</span>
           </button>
         ))}
       </div>
@@ -129,8 +137,7 @@ export default function EditProfilePage() {
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="text-sm px-3 py-1.5 rounded cursor-pointer"
-                style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}
+                className="btn btn-ghost text-sm px-3 py-1.5"
               >
                 Change photo
               </button>
@@ -150,38 +157,31 @@ export default function EditProfilePage() {
             { label: "Display Name", key: "display_name" },
           ].map(({ label, key }) => (
             <div key={key}>
-              <label className="text-sm block mb-1" style={{ color: "var(--text-muted)" }}>{label}</label>
+              <label className="eyebrow block mb-1.5">{label}</label>
               <input
                 type="text"
                 value={profile[key as keyof Profile] as string ?? ""}
                 onChange={(e) => setProfile((p) => ({ ...p, [key]: e.target.value }))}
-                className="w-full px-3 py-2 rounded-md text-sm"
-                style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+                className="w-full px-3.5 py-2 text-sm"
               />
             </div>
           ))}
 
           <div>
-            <label className="text-sm block mb-1" style={{ color: "var(--text-muted)" }}>Bio</label>
+            <label className="eyebrow block mb-1.5">Bio</label>
             <textarea
               rows={3}
               value={profile.bio}
               onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
               maxLength={300}
-              className="w-full px-3 py-2 rounded-md text-sm resize-none"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              className="w-full px-3.5 py-2.5 text-sm resize-none"
             />
-            <p className="text-xs mt-1 text-right" style={{ color: "var(--text-muted)" }}>{profile.bio.length}/300</p>
+            <p className="text-xs mt-1 text-right font-mono-nums" style={{ color: "var(--text-muted)" }}>{profile.bio.length}/300</p>
           </div>
 
-          {message && <p className={`text-sm ${message === "Saved!" ? "text-green-400" : "text-red-400"}`}>{message}</p>}
+          {message && <p className="text-sm" style={{ color: message === "Saved!" ? "var(--success)" : "var(--destructive)" }}>{message}</p>}
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full py-2 rounded-md text-sm font-semibold text-white cursor-pointer"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
+          <button type="submit" disabled={saving} className="btn btn-primary w-full">
             {saving ? "Saving…" : "Save changes"}
           </button>
         </form>
@@ -198,36 +198,33 @@ export default function EditProfilePage() {
             {GENRES.map((g) => {
               const on = profile.favorite_genres.includes(g);
               return (
-                <button
+                <motion.button
                   key={g}
                   type="button"
                   onClick={() => toggleGenre(g)}
-                  className="px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer"
+                  whileTap={{ scale: 0.94 }}
+                  animate={{ scale: on ? 1.05 : 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className="px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors"
                   style={{
                     backgroundColor: on ? "var(--accent)" : "var(--surface)",
                     color: on ? "#fff" : "var(--text-muted)",
                     border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`,
-                    transform: on ? "scale(1.05)" : "scale(1)",
                   }}
                 >
                   {g}
-                </button>
+                </motion.button>
               );
             })}
           </div>
 
-          <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+          <p className="text-xs mb-4 font-mono-nums" style={{ color: "var(--text-muted)" }}>
             {profile.favorite_genres.length} genre{profile.favorite_genres.length !== 1 ? "s" : ""} selected
           </p>
 
-          {message && <p className={`text-sm mb-4 ${message === "Saved!" ? "text-green-400" : "text-red-400"}`}>{message}</p>}
+          {message && <p className="text-sm mb-4" style={{ color: message === "Saved!" ? "var(--success)" : "var(--destructive)" }}>{message}</p>}
 
-          <button
-            onClick={savePreferences}
-            disabled={saving}
-            className="w-full py-2 rounded-md text-sm font-semibold text-white cursor-pointer"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
+          <button onClick={savePreferences} disabled={saving} className="btn btn-primary w-full">
             {saving ? "Saving…" : "Save preferences"}
           </button>
         </div>
@@ -244,7 +241,7 @@ export default function EditProfilePage() {
             onDone={(count) => setMessage(`Imported ${count} anime successfully.`)}
           />
           {message && (
-            <p className={`text-sm mt-4 ${message.startsWith("Imported") ? "text-green-400" : "text-red-400"}`}>
+            <p className="text-sm mt-4" style={{ color: message.startsWith("Imported") ? "var(--success)" : "var(--destructive)" }}>
               {message}
             </p>
           )}

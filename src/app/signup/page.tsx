@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { GENRES } from "@/lib/genres";
 import { ImportPanel } from "@/components/ImportPanel";
 
@@ -101,6 +102,7 @@ export default function SignupPage() {
       <div className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="text-center mb-8">
+            <p className="eyebrow mb-2">Step 3 of 3</p>
             <h1 className="text-2xl font-bold mb-2">Import your list</h1>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
               Already tracking anime elsewhere? Bring it all in — or skip and start fresh.
@@ -119,8 +121,7 @@ export default function SignupPage() {
 
           <button
             onClick={() => { router.refresh(); router.push("/dashboard"); }}
-            className="w-full mt-4 py-2.5 rounded-xl text-sm cursor-pointer"
-            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+            className="btn btn-ghost w-full mt-4 py-2.5"
           >
             Skip — start fresh
           </button>
@@ -134,6 +135,7 @@ export default function SignupPage() {
       <div className="min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
           <div className="text-center mb-8">
+            <p className="eyebrow mb-2">Step 2 of 3</p>
             <h1 className="text-2xl font-bold mb-2">What do you like?</h1>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
               Pick your favourite genres — we&apos;ll use these on your profile.
@@ -144,20 +146,22 @@ export default function SignupPage() {
             {GENRES.map((g) => {
               const on = selected.has(g);
               return (
-                <button
+                <motion.button
                   key={g}
                   type="button"
                   onClick={() => toggleGenre(g)}
-                  className="px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer"
+                  whileTap={{ scale: 0.94 }}
+                  animate={{ scale: on ? 1.05 : 1 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  className="px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors"
                   style={{
                     backgroundColor: on ? "var(--accent)" : "var(--surface)",
                     color: on ? "#fff" : "var(--text-muted)",
                     border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`,
-                    transform: on ? "scale(1.05)" : "scale(1)",
                   }}
                 >
                   {g}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -166,16 +170,14 @@ export default function SignupPage() {
             <button
               onClick={() => savePreferences(false)}
               disabled={saving || selected.size === 0}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer transition-opacity disabled:opacity-40"
-              style={{ backgroundColor: "var(--accent)" }}
+              className="btn btn-primary flex-1 py-2.5 disabled:opacity-40"
             >
               {saving ? "Saving…" : `Continue with ${selected.size > 0 ? selected.size + " selected" : "selection"}`}
             </button>
             <button
               onClick={() => savePreferences(true)}
               disabled={saving}
-              className="px-4 py-2.5 rounded-xl text-sm cursor-pointer"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
+              className="btn btn-ghost px-4 py-2.5"
             >
               Skip
             </button>
@@ -187,14 +189,16 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-8 text-center">Create account</h1>
+      <div className="card w-full max-w-sm p-8">
+        <div className="text-center mb-8">
+          <p className="eyebrow mb-2">Step 1 of 3</p>
+          <h1 className="text-2xl font-bold">Create account</h1>
+        </div>
 
         <button
           onClick={signInWithGoogle}
           disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer mb-4"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+          className="btn btn-secondary w-full py-2.5 mb-4"
         >
           <GoogleIcon />
           {googleLoading ? "Redirecting…" : "Continue with Google"}
@@ -208,7 +212,7 @@ export default function SignupPage() {
 
         <form onSubmit={submitAccount} className="space-y-4">
           <div>
-            <label className="text-sm block mb-1" style={{ color: "var(--text-muted)" }}>Username</label>
+            <label className="eyebrow block mb-1.5">Username</label>
             <input
               type="text"
               required
@@ -217,47 +221,42 @@ export default function SignupPage() {
               pattern="[a-zA-Z0-9_]+"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-md text-sm"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              className="w-full px-3.5 py-2 text-sm"
+              style={{ backgroundColor: "var(--surface-2)" }}
             />
           </div>
           <div>
-            <label className="text-sm block mb-1" style={{ color: "var(--text-muted)" }}>Email</label>
+            <label className="eyebrow block mb-1.5">Email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-md text-sm"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              className="w-full px-3.5 py-2 text-sm"
+              style={{ backgroundColor: "var(--surface-2)" }}
             />
           </div>
           <div>
-            <label className="text-sm block mb-1" style={{ color: "var(--text-muted)" }}>Password</label>
+            <label className="eyebrow block mb-1.5">Password</label>
             <input
               type="password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md text-sm"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              className="w-full px-3.5 py-2 text-sm"
+              style={{ backgroundColor: "var(--surface-2)" }}
             />
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 rounded-md text-sm font-semibold text-white cursor-pointer"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
+          {error && <p className="text-sm" style={{ color: "var(--destructive)" }}>{error}</p>}
+          <button type="submit" disabled={loading} className="btn btn-primary w-full">
             {loading ? "Creating account…" : "Sign up"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+        <p className="mt-5 text-center text-sm" style={{ color: "var(--text-muted)" }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "var(--accent)" }}>Log in</Link>
+          <Link href="/login" className="hover:underline" style={{ color: "var(--accent)" }}>Log in</Link>
         </p>
       </div>
     </div>

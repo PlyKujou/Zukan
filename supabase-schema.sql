@@ -151,3 +151,18 @@ create policy "avatars_insert" on storage.objects for insert with check (
 create policy "avatars_update" on storage.objects for update using (
   bucket_id = 'avatars' and auth.uid()::text = (storage.foldername(name))[1]
 );
+
+-- Manga support: anime and manga share the same tables (list_entries, reviews, anime_comments).
+-- AniList assigns anime and manga separate MAL id spaces, so mal_id alone is not unique across
+-- both — media_type disambiguates. The `episodes` column doubles as "chapters read" for manga
+-- entries so all existing progress-tracking UI keeps working unchanged.
+alter table list_entries add column if not exists media_type text not null default 'anime' check (media_type in ('anime','manga'));
+alter table list_entries drop constraint if exists list_entries_user_id_mal_id_key;
+alter table list_entries add constraint list_entries_user_id_mal_id_media_type_key unique (user_id, mal_id, media_type);
+
+alter table reviews add column if not exists media_type text not null default 'anime' check (media_type in ('anime','manga'));
+alter table reviews drop constraint if exists reviews_user_id_mal_id_key;
+alter table reviews add constraint reviews_user_id_mal_id_media_type_key unique (user_id, mal_id, media_type);
+
+-- anime_comments predates this file (created ad hoc) — this is safe whether or not it exists yet.
+alter table if exists public.anime_comments add column if not exists media_type text not null default 'anime' check (media_type in ('anime','manga'));

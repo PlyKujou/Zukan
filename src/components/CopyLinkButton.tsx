@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Link2 } from "lucide-react";
 
 export function CopyLinkButton() {
   const [copied, setCopied] = useState(false);
@@ -14,13 +15,10 @@ export function CopyLinkButton() {
   return (
     <button
       onClick={copy}
-      className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-colors"
-      style={{
-        backgroundColor: copied ? "#22c55e" : "var(--surface)",
-        border: "1px solid var(--border)",
-        color: copied ? "#fff" : "var(--text-muted)",
-      }}
+      className="btn btn-ghost"
+      style={copied ? { color: "var(--success)", borderColor: "var(--success)" } : undefined}
     >
+      {copied ? <Check size={14} strokeWidth={2.5} /> : <Link2 size={14} strokeWidth={2} />}
       {copied ? "Copied!" : "Copy link"}
     </button>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 
 interface Post {
@@ -19,7 +20,11 @@ interface Props {
   guildId: string;
 }
 
+const PAGE_SIZE = 10;
+
 export function GuildPostList({ posts, currentUserId, guildId }: Props) {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
   if (posts.length === 0) {
     return (
       <p className="text-sm text-center py-10" style={{ color: "var(--text-muted)" }}>
@@ -30,9 +35,23 @@ export function GuildPostList({ posts, currentUserId, guildId }: Props) {
 
   return (
     <div className="space-y-4">
-      {posts.map((post) => (
-        <PostCard key={post.id} post={post} currentUserId={currentUserId} guildId={guildId} />
+      {posts.slice(0, visibleCount).map((post, i) => (
+        <motion.div
+          key={post.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3), ease: [0.22, 1, 0.36, 1] }}
+        >
+          <PostCard post={post} currentUserId={currentUserId} guildId={guildId} />
+        </motion.div>
       ))}
+      {posts.length > visibleCount && (
+        <div className="flex justify-center pt-2">
+          <button onClick={() => setVisibleCount((c) => c + PAGE_SIZE)} className="btn btn-ghost">
+            Load more ({posts.length - visibleCount} remaining)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -55,10 +74,7 @@ function PostCard({ post, currentUserId, guildId }: { post: Post; currentUserId:
   const isOwn = !!currentUserId; // RLS will enforce actual ownership on delete
 
   return (
-    <div
-      className="rounded-xl p-4"
-      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-    >
+    <div className="card card-hover p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Link
@@ -68,7 +84,7 @@ function PostCard({ post, currentUserId, guildId }: { post: Post; currentUserId:
           >
             {post.profiles?.display_name || post.profiles?.username || "Unknown"}
           </Link>
-          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+          <span className="text-xs font-mono-nums" style={{ color: "var(--text-muted)" }}>
             {new Date(post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
         </div>
@@ -77,7 +93,7 @@ function PostCard({ post, currentUserId, guildId }: { post: Post; currentUserId:
             onClick={deletePost}
             disabled={deleting}
             className="text-xs cursor-pointer hover:underline"
-            style={{ color: "#f87171" }}
+            style={{ color: "var(--destructive)" }}
           >
             {deleting ? "…" : "Delete"}
           </button>

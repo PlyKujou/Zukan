@@ -33,11 +33,7 @@ export function FollowButton({ targetUserId, isFollowing: initial, currentUserId
     <button
       onClick={toggle}
       disabled={loading}
-      className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-colors"
-      style={following
-        ? { backgroundColor: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)" }
-        : { backgroundColor: "var(--accent)", color: "#fff" }
-      }
+      className={following ? "btn btn-ghost" : "btn btn-primary"}
     >
       {loading ? "…" : following ? "Following" : "Follow"}
     </button>

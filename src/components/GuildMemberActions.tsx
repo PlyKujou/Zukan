@@ -41,7 +41,7 @@ export function GuildMemberActions({ guildId, targetUserId, currentRole, ownerId
           onClick={() => setRole("mod")}
           disabled={loading}
           className="text-xs px-2 py-0.5 rounded cursor-pointer"
-          style={{ backgroundColor: "rgba(96,165,250,0.15)", color: "#60a5fa" }}
+          style={{ backgroundColor: "rgba(94,176,255,0.15)", color: "#5eb0ff" }}
         >
           + Mod
         </button>
@@ -60,7 +60,7 @@ export function GuildMemberActions({ guildId, targetUserId, currentRole, ownerId
         onClick={kick}
         disabled={loading}
         className="text-xs px-2 py-0.5 rounded cursor-pointer"
-        style={{ backgroundColor: "rgba(248,113,113,0.12)", color: "#f87171" }}
+        style={{ backgroundColor: "rgba(255,92,92,0.12)", color: "var(--destructive)" }}
       >
         Kick
       </button>

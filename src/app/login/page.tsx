@@ -72,15 +72,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-8 text-center">Log in</h1>
+      <div className="card w-full max-w-sm p-8">
+        <div className="text-center mb-8">
+          <p className="eyebrow mb-2">Welcome back</p>
+          <h1 className="text-2xl font-bold">Log in</h1>
+        </div>
 
         {/* Google */}
         <button
           onClick={signInWithGoogle}
           disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer mb-4"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+          className="btn btn-secondary w-full py-2.5 mb-4"
         >
           <GoogleIcon />
           {googleLoading ? "Redirecting…" : "Continue with Google"}
@@ -94,41 +96,36 @@ export default function LoginPage() {
 
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-sm block mb-1" style={{ color: "var(--text-muted)" }}>Email or username</label>
+            <label className="eyebrow block mb-1.5">Email or username</label>
             <input
               type="text"
               required
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              className="w-full px-3 py-2 rounded-md text-sm"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              className="w-full px-3.5 py-2 text-sm"
+              style={{ backgroundColor: "var(--surface-2)" }}
             />
           </div>
           <div>
-            <label className="text-sm block mb-1" style={{ color: "var(--text-muted)" }}>Password</label>
+            <label className="eyebrow block mb-1.5">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md text-sm"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              className="w-full px-3.5 py-2 text-sm"
+              style={{ backgroundColor: "var(--surface-2)" }}
             />
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 rounded-md text-sm font-semibold text-white transition-colors cursor-pointer"
-            style={{ backgroundColor: "var(--accent)" }}
-          >
+          {error && <p className="text-sm" style={{ color: "var(--destructive)" }}>{error}</p>}
+          <button type="submit" disabled={loading} className="btn btn-primary w-full">
             {loading ? "Logging in…" : "Log in"}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm" style={{ color: "var(--text-muted)" }}>
+        <p className="mt-5 text-center text-sm" style={{ color: "var(--text-muted)" }}>
           No account?{" "}
-          <Link href="/signup" style={{ color: "var(--accent)" }}>Sign up</Link>
+          <Link href="/signup" className="hover:underline" style={{ color: "var(--accent)" }}>Sign up</Link>
         </p>
       </div>
     </div>

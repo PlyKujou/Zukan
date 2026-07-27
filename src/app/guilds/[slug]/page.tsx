@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Shield } from "lucide-react";
 import { GuildActions } from "@/components/GuildActions";
 import { GuildPostForm } from "@/components/GuildPostForm";
 import { GuildPostList } from "@/components/GuildPostList";
@@ -54,17 +55,24 @@ export default async function GuildPage({ params }: Props) {
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Header */}
-      <div
-        className="rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4"
-        style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-      >
-        <span className="text-5xl">{guild.icon || "⚔️"}</span>
+      <div className="card p-6 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 relative overflow-hidden">
+        <div
+          className="absolute top-0 left-0 right-0 pointer-events-none"
+          style={{ height: 1, background: "linear-gradient(90deg, transparent, var(--accent-dim-border), transparent)" }}
+        />
+        {guild.icon ? (
+          <span className="text-5xl">{guild.icon}</span>
+        ) : (
+          <span className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}>
+            <Shield size={28} strokeWidth={2} />
+          </span>
+        )}
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold">{guild.name}</h1>
+          <h1 className="text-3xl font-bold">{guild.name}</h1>
           {guild.description && (
             <p className="text-sm mt-1 max-w-xl" style={{ color: "var(--text-muted)" }}>{guild.description}</p>
           )}
-          <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+          <p className="text-xs mt-2 font-mono-nums" style={{ color: "var(--text-muted)" }}>
             {members?.length ?? 0} {(members?.length ?? 0) === 1 ? "member" : "members"}
           </p>
         </div>
@@ -77,7 +85,7 @@ export default async function GuildPage({ params }: Props) {
           />
         )}
         {!user && (
-          <Link href="/login" className="px-4 py-2 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: "var(--accent)" }}>
+          <Link href="/login" className="btn btn-primary">
             Log in to join
           </Link>
         )}
@@ -90,10 +98,7 @@ export default async function GuildPage({ params }: Props) {
             <GuildPostForm guildId={guild.id} userId={user!.id} />
           )}
           {!isMember && user && (
-            <div
-              className="rounded-xl p-4 mb-6 text-sm text-center"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}
-            >
+            <div className="card p-4 mb-6 text-sm text-center" style={{ color: "var(--text-muted)" }}>
               Join this guild to post.
             </div>
           )}
@@ -111,13 +116,8 @@ export default async function GuildPage({ params }: Props) {
         </div>
 
         {/* Members sidebar */}
-        <div
-          className="rounded-2xl p-5 h-fit"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-        >
-          <h2 className="text-sm font-bold mb-4 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            Members
-          </h2>
+        <div className="card p-5 h-fit">
+          <h2 className="eyebrow mb-4">Members</h2>
           <div className="space-y-3">
             {members?.map((m) => {
               const profile = m.profiles as unknown as { username: string; display_name: string | null } | null;
@@ -139,7 +139,7 @@ export default async function GuildPage({ params }: Props) {
                     <span className="text-xs font-bold shrink-0" style={{ color: "var(--accent)" }}>Owner</span>
                   )}
                   {m.role === "mod" && (
-                    <span className="text-xs font-bold shrink-0" style={{ color: "#60a5fa" }}>Mod</span>
+                    <span className="text-xs font-bold shrink-0" style={{ color: "#5eb0ff" }}>Mod</span>
                   )}
                   {user && isOwner && (
                     <GuildMemberActions

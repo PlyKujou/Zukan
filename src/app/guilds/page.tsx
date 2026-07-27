@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { Shield } from "lucide-react";
 import { CreateGuildButton } from "@/components/CreateGuildButton";
 
 export default async function GuildsPage() {
@@ -25,10 +26,11 @@ export default async function GuildsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-end justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Guilds</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+          <p className="eyebrow mb-1.5">Community</p>
+          <h1 className="text-3xl font-bold">Guilds</h1>
+          <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
             Join communities built around the anime you love.
           </p>
         </div>
@@ -36,11 +38,8 @@ export default async function GuildsPage() {
       </div>
 
       {(!guilds || guilds.length === 0) && (
-        <div
-          className="rounded-2xl p-10 text-center"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-        >
-          <p className="text-3xl mb-3">⚔️</p>
+        <div className="card p-10 text-center">
+          <Shield size={32} strokeWidth={1.5} className="mx-auto mb-3" style={{ color: "var(--text-muted)" }} />
           <p className="font-semibold mb-1">No guilds yet</p>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             Be the first to create one.
@@ -56,16 +55,22 @@ export default async function GuildsPage() {
             <Link
               key={guild.id}
               href={`/guilds/${guild.slug}`}
-              className="rounded-2xl p-5 flex flex-col gap-3 hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: "var(--surface)", border: `1px solid ${isMember ? "var(--accent)" : "var(--border)"}` }}
+              className="card-hover rounded-2xl p-5 flex flex-col gap-3"
+              style={{ backgroundColor: "var(--surface)", border: `1px solid ${isMember ? "var(--accent-dim-border)" : "var(--border)"}` }}
             >
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{guild.icon || "⚔️"}</span>
+                {guild.icon ? (
+                  <span className="text-3xl">{guild.icon}</span>
+                ) : (
+                  <span className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: "var(--accent-dim)", color: "var(--accent)" }}>
+                    <Shield size={20} strokeWidth={2} />
+                  </span>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold truncate">{guild.name}</p>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  <p className="text-xs font-mono-nums" style={{ color: "var(--text-muted)" }}>
                     {memberCount} {memberCount === 1 ? "member" : "members"}
-                    {isMember && <span className="ml-2 font-semibold" style={{ color: "var(--accent)" }}>• Joined</span>}
+                    {isMember && <span className="ml-2 font-semibold" style={{ color: "var(--accent)" }}>· Joined</span>}
                   </p>
                 </div>
               </div>

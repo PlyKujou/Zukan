@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getZukanRatings } from "@/lib/supabase/ratings";
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowLeft, ArrowRight, Star } from "lucide-react";
 
 // Map Jikan broadcast day strings to JS day index (0=Sun)
 const DAY_MAP: Record<string, number> = {
@@ -85,13 +86,13 @@ export default async function SeasonPage({ searchParams }: Props) {
   const myEntries: Record<number, string> = {};
   if (user && malIds.length > 0) {
     const { data: entries } = await supabase
-      .from("list_entries").select("mal_id, status").eq("user_id", user.id).in("mal_id", malIds);
+      .from("list_entries").select("mal_id, status").eq("user_id", user.id).eq("media_type", "anime").in("mal_id", malIds);
     entries?.forEach((e) => { myEntries[e.mal_id] = e.status; });
   }
 
   const STATUS_COLORS: Record<string, string> = {
-    watching: "var(--accent)", completed: "#22c55e",
-    plan_to_watch: "#60a5fa", on_hold: "#facc15", dropped: "#f87171",
+    watching: "#ff4e2a", completed: "#46d69a",
+    plan_to_watch: "#5eb0ff", on_hold: "#ffb257", dropped: "#8a7d6e",
   };
   const STATUS_SHORT: Record<string, string> = {
     watching: "Watching", completed: "Done",
@@ -127,11 +128,12 @@ export default async function SeasonPage({ searchParams }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold">
+          <p className="eyebrow mb-1.5">Seasonal</p>
+          <h1 className="text-3xl font-bold">
             {view === "schedule" ? "This Week's Schedule" : <span className="capitalize">{season} {year}</span>}
           </h1>
           {view === "schedule" && (
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            <p className="text-sm mt-2 font-mono-nums" style={{ color: "var(--text-muted)" }}>
               {weekDates[0].toLocaleDateString("en-US", { month: "short", day: "numeric" })} – {weekDates[6].toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {anime.length} airing
             </p>
           )}
@@ -139,7 +141,7 @@ export default async function SeasonPage({ searchParams }: Props) {
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* View toggle */}
-          <div className="flex rounded-lg overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+          <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
             <Link
               href="/season?view=schedule"
               className="px-3 py-1.5 text-sm font-medium"
@@ -159,14 +161,16 @@ export default async function SeasonPage({ searchParams }: Props) {
           {/* Season nav (grid view only) */}
           {view === "grid" && (
             <>
-              <Link href={`/season?view=grid&year=${prevSeason.year}&season=${prevSeason.season}`} className="px-3 py-1.5 rounded-lg text-sm" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                ← {prevSeason.season}
+              <Link href={`/season?view=grid&year=${prevSeason.year}&season=${prevSeason.season}`} className="btn btn-ghost capitalize text-sm px-3 py-1.5">
+                <ArrowLeft size={13} strokeWidth={2.5} />
+                {prevSeason.season}
               </Link>
-              <Link href={`/season?view=grid&year=${def.year}&season=${def.season}`} className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: "var(--accent)" }}>
+              <Link href={`/season?view=grid&year=${def.year}&season=${def.season}`} className="btn btn-primary text-sm px-3 py-1.5">
                 Now
               </Link>
-              <Link href={`/season?view=grid&year=${nextSeason.year}&season=${nextSeason.season}`} className="px-3 py-1.5 rounded-lg text-sm" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
-                {nextSeason.season} →
+              <Link href={`/season?view=grid&year=${nextSeason.year}&season=${nextSeason.season}`} className="btn btn-ghost capitalize text-sm px-3 py-1.5">
+                {nextSeason.season}
+                <ArrowRight size={13} strokeWidth={2.5} />
               </Link>
             </>
           )}
@@ -190,8 +194,8 @@ export default async function SeasonPage({ searchParams }: Props) {
                     border: `1px solid ${isToday ? "var(--accent)" : "var(--border)"}`,
                   }}
                 >
-                  <p className="text-sm font-bold" style={{ color: isToday ? "#fff" : "var(--text)" }}>{DAYS[jsDay]}</p>
-                  <p className="text-xs" style={{ color: isToday ? "rgba(255,255,255,0.75)" : "var(--text-muted)" }}>
+                  <p className="text-sm font-bold uppercase tracking-wider" style={{ color: isToday ? "#fff" : "var(--text)" }}>{DAYS[jsDay]}</p>
+                  <p className="text-xs font-mono-nums" style={{ color: isToday ? "rgba(255,255,255,0.75)" : "var(--text-muted)" }}>
                     {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </p>
                 </div>
@@ -210,7 +214,7 @@ export default async function SeasonPage({ searchParams }: Props) {
                       <Link
                         key={a.mal_id}
                         href={`/anime/${a.mal_id}`}
-                        className="group flex gap-2 p-2 rounded-xl hover:opacity-90 transition-opacity"
+                        className="group card-hover flex gap-2 p-2 rounded-xl"
                         style={{
                           backgroundColor: "var(--surface)",
                           border: `1px solid ${isToday ? "var(--accent-dim-border)" : "var(--border)"}`,
@@ -228,10 +232,10 @@ export default async function SeasonPage({ searchParams }: Props) {
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold line-clamp-2 leading-snug mb-1">{title}</p>
                           {time && (
-                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{time}</p>
+                            <p className="text-xs font-mono-nums" style={{ color: "var(--text-muted)" }}>{time}</p>
                           )}
                           {ep && (
-                            <p className="text-xs" style={{ color: "var(--accent)" }}>
+                            <p className="text-xs font-mono-nums" style={{ color: "var(--accent)" }}>
                               ep {ep}{a.episodes ? `/${a.episodes}` : ""}
                             </p>
                           )}
@@ -276,7 +280,7 @@ export default async function SeasonPage({ searchParams }: Props) {
 
       {/* ── GRID VIEW ── */}
       {view === "grid" && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 stagger">
           {anime.map((a) => {
             const title = a.title_english || a.title;
             const status = myEntries[a.mal_id];
@@ -284,7 +288,7 @@ export default async function SeasonPage({ searchParams }: Props) {
             const dayLabel = dayStr ? DAYS_FULL.find((d) => dayStr.startsWith(d.toLowerCase().slice(0, 3))) ?? null : null;
             return (
               <Link key={a.mal_id} href={`/anime/${a.mal_id}`} className="group">
-                <div className="relative aspect-[2/3] rounded-xl overflow-hidden">
+                <div className="relative aspect-[2/3] rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
                   <Image
                     src={a.images.jpg.large_image_url || a.images.jpg.image_url}
                     alt={title} fill
@@ -298,9 +302,12 @@ export default async function SeasonPage({ searchParams }: Props) {
                   )}
                   <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                     {a.score && (
-                      <div className="text-xs font-bold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "var(--accent)", color: "#fff" }}>★ {a.score}</div>
+                      <div className="flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded-md font-mono-nums" style={{ backgroundColor: "rgba(11,9,8,0.8)", color: "var(--accent-2)", backdropFilter: "blur(4px)" }}>
+                        <Star size={10} fill="currentColor" strokeWidth={0} />
+                        {a.score}
+                      </div>
                     )}
-                    <div className="text-xs font-bold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "rgba(0,0,0,0.65)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)" }}>Z {zukanRatings[a.mal_id] ?? "—"}</div>
+                    <div className="text-xs font-bold px-1.5 py-0.5 rounded-md font-mono-nums" style={{ backgroundColor: "rgba(11,9,8,0.8)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(4px)" }}>Z {zukanRatings[a.mal_id] ?? "—"}</div>
                   </div>
                   {dayLabel && (
                     <div className="absolute bottom-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(0,0,0,0.65)", color: "#fff" }}>

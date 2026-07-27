@@ -123,7 +123,8 @@ export function ExportPanel({ userId, username }: Props) {
     const { data: entries, error: err } = await supabase
       .from("list_entries")
       .select("mal_id, title, episodes, status, rating, progress")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("media_type", "anime");
 
     if (err || !entries) {
       setError(err?.message ?? "Failed to load your list.");
@@ -167,7 +168,7 @@ export function ExportPanel({ userId, username }: Props) {
         done={done === "anilist"}
         onClick={() => exportAs("anilist")}
       />
-      {error && <p className="text-sm text-red-400 mt-2">{error}</p>}
+      {error && <p className="text-sm mt-2" style={{ color: "var(--destructive)" }}>{error}</p>}
     </div>
   );
 }
@@ -181,10 +182,7 @@ function ExportCard({ label, sublabel, hint, loading, done, onClick }: {
   onClick: () => void;
 }) {
   return (
-    <div
-      className="flex items-center justify-between p-4 rounded-xl"
-      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
-    >
+    <div className="card flex items-center justify-between p-4">
       <div>
         <p className="font-semibold text-sm">{label}</p>
         <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{sublabel}</p>
@@ -193,8 +191,8 @@ function ExportCard({ label, sublabel, hint, loading, done, onClick }: {
       <button
         onClick={onClick}
         disabled={loading}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white cursor-pointer transition-opacity disabled:opacity-50 shrink-0 ml-4"
-        style={{ backgroundColor: done ? "var(--success)" : "var(--accent)" }}
+        className="btn btn-primary disabled:opacity-50 shrink-0 ml-4"
+        style={done ? { backgroundColor: "var(--success)" } : undefined}
       >
         <Download size={14} strokeWidth={2} />
         {loading ? "Exporting…" : done ? "Downloaded" : "Export"}
