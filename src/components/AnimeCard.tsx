@@ -72,7 +72,7 @@ export function AnimeCard({ anime, showGenres = false, zukanRating }: Props) {
       image_url: anime.images.jpg.image_url,
       episodes: totalUnits,
       status: s,
-      progress: 0,
+      progress: s === "completed" && totalUnits ? totalUnits : 0,
     }, { onConflict: "user_id,mal_id,media_type" });
     setStatus(s);
     setSaving(false);

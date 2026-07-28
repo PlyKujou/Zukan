@@ -362,7 +362,7 @@ export default async function PublicProfilePage({ params }: Props) {
                             <p className="font-medium truncate text-sm">{entry.title}</p>
                             {entry.episodes && (
                               <p className="text-xs mt-0.5 font-mono-nums" style={{ color: "var(--text-muted)" }}>
-                                {entry.progress}/{entry.episodes} eps
+                                {entry.status === "completed" ? entry.episodes : entry.progress}/{entry.episodes} eps
                               </p>
                             )}
                           </div>

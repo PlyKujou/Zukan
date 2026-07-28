@@ -44,7 +44,7 @@ export function AddToListButton({ malId, title, imageUrl, episodes, mediaType = 
             if (entry) {
               setCurrent(entry as { status: ListStatus; rating: number | null; progress: number });
               setRating(entry.rating);
-              setProgress(entry.progress ?? 0);
+              setProgress(entry.status === "completed" && episodes ? episodes : entry.progress ?? 0);
             }
           });
       }

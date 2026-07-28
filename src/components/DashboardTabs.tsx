@@ -132,7 +132,8 @@ export function DashboardTabs({ grouped, userId, mediaType = "anime" }: { groupe
       ) : (
         <div key={active} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {filtered.slice(0, visibleCount).map((entry, i) => {
-            const progress = progressOverrides[entry.id] ?? entry.progress;
+            const rawProgress = progressOverrides[entry.id] ?? entry.progress;
+            const progress = entry.status === "completed" && entry.episodes ? entry.episodes : rawProgress;
             const pct = entry.episodes && entry.episodes > 0
               ? Math.min(100, (progress / entry.episodes) * 100)
               : 0;
